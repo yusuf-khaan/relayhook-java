@@ -45,8 +45,8 @@ public class MainService {
                 node.setOutputNodes(nodeDTO.getOutputNodes());
                 node.setNodeData(nodeDTO.getNodeData());
                 node.setNodeType(nodeDTO.getNodeType());
-                ;
                 node.setWorkflow(workflow);
+                node.setCanExecuteParallel(nodeDTO.getCanExecuteParallel());
                 if (nodeDTO.getRetry() != null) {
                     node.setRetriesLeft(nodeDTO.getRetry());
                 } else {

@@ -9,16 +9,11 @@ import org.hibernate.annotations.Type;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.app.relayhook.Enums.NodeStatus;
-import com.app.relayhook.Enums.NodeType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.vladmihalcea.hibernate.type.json.JsonType;
 
-import jakarta.annotation.Generated;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -29,44 +24,24 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Entity
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class WorkflowNodes {
+public class WorkflowNodeExecution {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long nodeId;
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    private WorkflowExecution workflowExecution;
 
-    @ElementCollection
-    private List<Long> inputNodes;
+    private Long workflowNodeId;
 
-    @ElementCollection
-    private List<Long> outputNodes;
-
-    private Long level;
-
-    private Boolean canExecuteParallel = true;
-
-    @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb")
-    private Map<String, Object> nodeData;
-
-    @Enumerated(EnumType.STRING)
     private NodeStatus status = NodeStatus.PENDING;
 
-    private int retriesLeft = 3;
-
-    @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb")
-    private Map<String, Object> output;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JsonIgnore
-    private Workflow workflow;
+    private Long retriesLeft = 3L;
 
     @CreationTimestamp
     @Column(updatable = false)
@@ -75,6 +50,18 @@ public class WorkflowNodes {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    @Enumerated(EnumType.STRING)
-    private NodeType nodeType = NodeType.INTEGRATION;
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private Map<String,Object> inputData;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private Map<String,Object> outputData;
+
+    @ElementCollection
+    private List<String> errorLogs;
+
+    private Long executionTime;
+
+    private Boolean canExecuteParallel;
 }

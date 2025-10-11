@@ -27,4 +27,6 @@ public class WorkflowNodesDTO {
 
     private NodeType nodeType;
 
+    private Boolean canExecuteParallel;
+
 }

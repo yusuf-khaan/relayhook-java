@@ -8,65 +8,42 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import com.app.relayhook.Enums.NodeStatus;
-import com.app.relayhook.Enums.NodeType;
+import com.app.relayhook.Enums.WorkflowStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.vladmihalcea.hibernate.type.json.JsonType;
 
-import jakarta.annotation.Generated;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Entity
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class WorkflowNodes {
+public class WorkflowExecution {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long nodeId;
+    private WorkflowStatus status = WorkflowStatus.STARTED;
 
-    @ElementCollection
-    private List<Long> inputNodes;
+    private Long workflowId;
 
-    @ElementCollection
-    private List<Long> outputNodes;
-
-    private Long level;
-
-    private Boolean canExecuteParallel = true;
-
-    @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb")
-    private Map<String, Object> nodeData;
-
-    @Enumerated(EnumType.STRING)
-    private NodeStatus status = NodeStatus.PENDING;
-
-    private int retriesLeft = 3;
-
-    @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb")
-    private Map<String, Object> output;
-
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JsonIgnore
     private Workflow workflow;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private Map<String,Object> trigger;
 
     @CreationTimestamp
     @Column(updatable = false)
@@ -75,6 +52,11 @@ public class WorkflowNodes {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    @Enumerated(EnumType.STRING)
-    private NodeType nodeType = NodeType.INTEGRATION;
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private Map<String, Object> metaData;
+
+    @ElementCollection
+    @OneToMany(mappedBy = "workflowExecution")
+    private List<WorkflowNodeExecution> workflowExecutionNodes;
 }
