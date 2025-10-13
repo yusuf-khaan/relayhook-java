@@ -56,15 +56,16 @@ public class WorkflowExecutorService {
         workflowNodeExecutionRepository.saveAll(nodeExecutions);
         workflowExecution.setWorkflowExecutionNodes(nodeExecutions);
 
+        for (WorkflowNodeExecution ne : nodeExecutions) {
+            WorkflowNodes node = nodeRepo.findById(ne.getWorkflowNodeId())
+                    .orElseThrow();
+            if (node.getInputNodes().isEmpty()) {
+                rabbitTemplate.convertAndSend(
+                        RabbitMqConfig.EXECUTE_EXCHANGE,
+                        RabbitMqConfig.EXECUTE_ROUTING_KEY,
+                        ne.getId());
+            }
+        }
 
-        nodeExecutions.stream()
-                .filter(ne -> nodeRepo.findById(ne.getWorkflowNodeId())
-                        .orElseThrow()
-                        .getInputNodes().isEmpty())
-                .forEach(ne -> rabbitTemplate.convertAndSend(
-                        RabbitMqConfig.EXCHANGE_NAME,
-                        RabbitMqConfig.ROUTING_KEY,
-                        ne.getId()
-                ));
     }
 }

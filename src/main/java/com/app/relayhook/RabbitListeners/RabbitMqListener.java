@@ -33,7 +33,7 @@ public class RabbitMqListener {
     private final WorkflowRepository workflowRepository;
     private final RabbitTemplate rabbitTemplate;
 
-    @RabbitListener(queues = RabbitMqConfig.QUEUE_NAME)
+    @RabbitListener(queues = RabbitMqConfig.EXECUTE_QUEUE)
     @Transactional
     public void processNode(Long nodeExecutionId) {
         WorkflowNodeExecution nodeExecution = nodeExecutionRepo.findById(nodeExecutionId).orElseThrow();
@@ -110,14 +110,14 @@ public class RabbitMqListener {
             if (ready && nextNodeExecution.getStatus() == NodeStatus.PENDING) {
                 if (!canParallel) {
                     rabbitTemplate.convertAndSend(
-                            RabbitMqConfig.EXCHANGE_NAME,
-                            RabbitMqConfig.ROUTING_KEY,
+                            RabbitMqConfig.EXECUTE_EXCHANGE,
+                            RabbitMqConfig.EXECUTE_ROUTING_KEY,
                             nextNodeExecution.getId());
                     break; // stop after scheduling one if serial
                 } else {
                     rabbitTemplate.convertAndSend(
-                            RabbitMqConfig.EXCHANGE_NAME,
-                            RabbitMqConfig.ROUTING_KEY,
+                            RabbitMqConfig.EXECUTE_EXCHANGE,
+                            RabbitMqConfig.EXECUTE_ROUTING_KEY,
                             nextNodeExecution.getId());
                 }
             }

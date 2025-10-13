@@ -24,7 +24,7 @@ public class WebhookService {
         if(workflowOpt.isEmpty()){
             return;
         }
-        Workflow workflow = workflowOpt.get();
+        workflowExecutorService.executeAndPersistWorkflow(workflowOpt.get(), requestData);
     }
 
 }
