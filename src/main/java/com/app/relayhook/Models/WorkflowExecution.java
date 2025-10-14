@@ -14,6 +14,7 @@ import com.vladmihalcea.hibernate.type.json.JsonType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -24,6 +25,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@Entity
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -34,8 +36,6 @@ public class WorkflowExecution {
     private Long id;
 
     private WorkflowStatus status = WorkflowStatus.STARTED;
-
-    private Long workflowId;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JsonIgnore

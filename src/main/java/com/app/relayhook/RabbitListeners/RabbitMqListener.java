@@ -22,7 +22,9 @@ import com.app.relayhook.Repository.WorkflowRepository;
 import com.app.relayhook.Service.WorkflowExecutorService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RabbitMqListener {
@@ -36,92 +38,95 @@ public class RabbitMqListener {
     @RabbitListener(queues = RabbitMqConfig.EXECUTE_QUEUE)
     @Transactional
     public void processNode(Long nodeExecutionId) {
-        WorkflowNodeExecution nodeExecution = nodeExecutionRepo.findById(nodeExecutionId).orElseThrow();
-        WorkflowNodes node = nodeRepo.findById(nodeExecution.getWorkflowNodeId()).orElseThrow();
+        log.info("webhoot hit from process node");
 
-        try {
-            // Execute node (call 3rd-party API or internal logic)
-            Map<String, Object> outputData = executeNode(node, nodeExecution.getInputData());
+        // return Map.of("status", "received", "nodeExecutionId", 20);
+    //     WorkflowNodeExecution nodeExecution = nodeExecutionRepo.findById(nodeExecutionId).orElseThrow();
+    //     WorkflowNodes node = nodeRepo.findById(nodeExecution.getWorkflowNodeId()).orElseThrow();
 
-            // Update node execution
-            nodeExecution.setStatus(NodeStatus.COMPLETED);
-            nodeExecution.setOutputData(outputData);
-            nodeExecutionRepo.save(nodeExecution);
+    //     try {
+    //         // Execute node (call 3rd-party API or internal logic)
+    //         Map<String, Object> outputData = executeNode(node, nodeExecution.getInputData());
 
-            // Schedule next nodes
-            scheduleNextNodes(nodeExecution);
+    //         // Update node execution
+    //         nodeExecution.setStatus(NodeStatus.COMPLETED);
+    //         nodeExecution.setOutputData(outputData);
+    //         nodeExecutionRepo.save(nodeExecution);
 
-        } catch (Exception e) {
-            nodeExecution.setStatus(NodeStatus.FAILED);
-            nodeExecution.getErrorLogs().add(e.getMessage());
-            nodeExecutionRepo.save(nodeExecution);
-        }
-    }
+    //         // Schedule next nodes
+    //         scheduleNextNodes(nodeExecution);
 
-    private Map<String, Object> executeNode(WorkflowNodes node, Map<String, Object> inputData) {
-        // Implement your node logic here
-        return Map.of("result", "success");
-    }
+    //     } catch (Exception e) {
+    //         nodeExecution.setStatus(NodeStatus.FAILED);
+    //         nodeExecution.getErrorLogs().add(e.getMessage());
+    //         nodeExecutionRepo.save(nodeExecution);
+    //     }
+    // }
 
-    private void scheduleNextNodes(WorkflowNodeExecution completedNode) {
-        WorkflowExecution execution = completedNode.getWorkflowExecution();
+    // private Map<String, Object> executeNode(WorkflowNodes node, Map<String, Object> inputData) {
+    //     // Implement your node logic here
+    //     return Map.of("result", "success");
+    // }
 
-        // Find all nodes of the workflow
-        List<WorkflowNodeExecution> allNodes = nodeExecutionRepo.findByWorkflowExecution(execution);
+    // private void scheduleNextNodes(WorkflowNodeExecution completedNode) {
+    //     WorkflowExecution execution = completedNode.getWorkflowExecution();
 
-        // Group nodes by level
-        Map<Integer, List<WorkflowNodeExecution>> levelMap = new HashMap<>();
-        for (WorkflowNodeExecution ne : allNodes) {
-            WorkflowNodes node = nodeRepo.findById(ne.getWorkflowNodeId()).orElseThrow();
-            int level = node.getLevel().intValue();
-            levelMap.computeIfAbsent(level, k -> new ArrayList<>()).add(ne);
-        }
+    //     // Find all nodes of the workflow
+    //     List<WorkflowNodeExecution> allNodes = nodeExecutionRepo.findByWorkflowExecution(execution);
 
-        // Find current completed node's level
-        WorkflowNodes completedNodeMeta = nodeRepo.findById(completedNode.getWorkflowNodeId()).orElseThrow();
-        Long currentLevel = completedNodeMeta.getLevel();
+    //     // Group nodes by level
+    //     Map<Integer, List<WorkflowNodeExecution>> levelMap = new HashMap<>();
+    //     for (WorkflowNodeExecution ne : allNodes) {
+    //         WorkflowNodes node = nodeRepo.findById(ne.getWorkflowNodeId()).orElseThrow();
+    //         int level = node.getLevel().intValue();
+    //         levelMap.computeIfAbsent(level, k -> new ArrayList<>()).add(ne);
+    //     }
 
-        // Find next level
-        Long nextLevel = currentLevel + 1L;
-        List<WorkflowNodeExecution> nextLevelNodes = levelMap.get(nextLevel);
-        if (nextLevelNodes == null || nextLevelNodes.isEmpty())
-            return;
+    //     // Find current completed node's level
+    //     WorkflowNodes completedNodeMeta = nodeRepo.findById(completedNode.getWorkflowNodeId()).orElseThrow();
+    //     Long currentLevel = completedNodeMeta.getLevel();
 
-        // Check parallelism for this level
-        boolean canParallel = nextLevelNodes.get(0).getCanExecuteParallel(); // all nodes in level
-                                                                             // share this
+    //     // Find next level
+    //     Long nextLevel = currentLevel + 1L;
+    //     List<WorkflowNodeExecution> nextLevelNodes = levelMap.get(nextLevel);
+    //     if (nextLevelNodes == null || nextLevelNodes.isEmpty())
+    //         return;
 
-        for (WorkflowNodeExecution nextNodeExecution : nextLevelNodes) {
-            WorkflowNodes nextNodeMeta = nodeRepo.findById(nextNodeExecution.getWorkflowNodeId()).orElseThrow();
+    //     // Check parallelism for this level
+    //     boolean canParallel = nextLevelNodes.get(0).getCanExecuteParallel(); // all nodes in level
+    //                                                                          // share this
 
-            // Check if all input nodes are completed
-            boolean ready = true;
-            for (Long inputNodeId : nextNodeMeta.getInputNodes()) {
-                WorkflowNodeExecution inputExecution = nodeExecutionRepo
-                        .findByWorkflowExecutionAndWorkflowNodeId(execution, inputNodeId)
-                        .orElseThrow();
-                if (inputExecution.getStatus() != NodeStatus.COMPLETED) {
-                    ready = false;
-                    break;
-                }
-            }
+    //     for (WorkflowNodeExecution nextNodeExecution : nextLevelNodes) {
+    //         WorkflowNodes nextNodeMeta = nodeRepo.findById(nextNodeExecution.getWorkflowNodeId()).orElseThrow();
 
-            // Enqueue if ready
-            if (ready && nextNodeExecution.getStatus() == NodeStatus.PENDING) {
-                if (!canParallel) {
-                    rabbitTemplate.convertAndSend(
-                            RabbitMqConfig.EXECUTE_EXCHANGE,
-                            RabbitMqConfig.EXECUTE_ROUTING_KEY,
-                            nextNodeExecution.getId());
-                    break; // stop after scheduling one if serial
-                } else {
-                    rabbitTemplate.convertAndSend(
-                            RabbitMqConfig.EXECUTE_EXCHANGE,
-                            RabbitMqConfig.EXECUTE_ROUTING_KEY,
-                            nextNodeExecution.getId());
-                }
-            }
-        }
+    //         // Check if all input nodes are completed
+    //         boolean ready = true;
+    //         for (Long inputNodeId : nextNodeMeta.getInputNodes()) {
+    //             WorkflowNodeExecution inputExecution = nodeExecutionRepo
+    //                     .findByWorkflowExecutionAndWorkflowNodeId(execution, inputNodeId)
+    //                     .orElseThrow();
+    //             if (inputExecution.getStatus() != NodeStatus.COMPLETED) {
+    //                 ready = false;
+    //                 break;
+    //             }
+    //         }
+
+    //         // Enqueue if ready
+    //         if (ready && nextNodeExecution.getStatus() == NodeStatus.PENDING) {
+    //             if (!canParallel) {
+    //                 rabbitTemplate.convertAndSend(
+    //                         RabbitMqConfig.EXECUTE_EXCHANGE,
+    //                         RabbitMqConfig.EXECUTE_ROUTING_KEY,
+    //                         nextNodeExecution.getId());
+    //                 break; // stop after scheduling one if serial
+    //             } else {
+    //                 rabbitTemplate.convertAndSend(
+    //                         RabbitMqConfig.EXECUTE_EXCHANGE,
+    //                         RabbitMqConfig.EXECUTE_ROUTING_KEY,
+    //                         nextNodeExecution.getId());
+    //             }
+    //         }
+    //     }
 
     }
 

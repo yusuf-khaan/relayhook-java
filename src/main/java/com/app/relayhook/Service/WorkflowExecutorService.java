@@ -37,7 +37,7 @@ public class WorkflowExecutorService {
     public void executeAndPersistWorkflow(Workflow workflow, Map<String, Object> requestData) {
 
         WorkflowExecution workflowExecution = new WorkflowExecution();
-        workflowExecution.setWorkflowId(workflow.getId());
+        workflowExecution.setWorkflow(workflow);
         workflowExecution.setTrigger(workflow.getTrigger());
         workflowExecution = workflowExecutionRepository.save(workflowExecution);
 
