@@ -13,8 +13,9 @@ import com.app.relayhook.Models.WorkflowNodes;
 import com.app.relayhook.Repository.WorkflowRepository;
 
 import lombok.RequiredArgsConstructor;
-import lombok.val;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MainService {
@@ -24,6 +25,7 @@ public class MainService {
     @Transactional
     public Workflow saveWorkflow(WorkflowDTO dto) {
         validateWorkflow(dto);
+
         Workflow workflow = new Workflow();
         workflow.setName(dto.getName());
         workflow.setDescription(dto.getDescription());
@@ -34,29 +36,32 @@ public class MainService {
         workflow.setIsActive(dto.getIsActive());
         workflow.setSchedule(dto.getSchedule());
         workflow.setWebhookUrl(dto.getWebhookUrl());
-        workflow.setMetadata(dto.getMetadata());
+        workflow.setMetadata(dto.getMetaData());
 
         List<WorkflowNodes> nodesList = new ArrayList<>();
-        if (dto.getNodes() != null) {
-            for (WorkflowNodesDTO nodeDTO : dto.getNodes()) {
-                WorkflowNodes node = new WorkflowNodes();
-                node.setNodeId(nodeDTO.getNodeId());
-                node.setInputNodes(nodeDTO.getInputNodes());
-                node.setOutputNodes(nodeDTO.getOutputNodes());
-                node.setNodeData(nodeDTO.getNodeData());
-                node.setNodeType(nodeDTO.getNodeType());
-                node.setWorkflow(workflow);
-                node.setCanExecuteParallel(nodeDTO.getCanExecuteParallel());
-                if (nodeDTO.getRetry() != null) {
-                    node.setRetriesLeft(nodeDTO.getRetry());
-                } else {
-                    node.setRetriesLeft(3);
+        if (dto.getWorkflowNodesData() != null) {
+            for (WorkflowNodesDTO levelDTO : dto.getWorkflowNodesData()) {
+                if (levelDTO.getNodes() != null) {
+                    for (WorkflowNodesDTO.LevelWrapper nodeDTO : levelDTO.getNodes()) {
+                        WorkflowNodes node = new WorkflowNodes();
+                        node.setNodeId(nodeDTO.getNodeId());
+                        node.setInputNodes(nodeDTO.getInputSources());
+                        node.setOutputNodes(nodeDTO.getOutputSources());
+                        node.setNodeData(nodeDTO.getNodeData());
+                        node.setNodeType(levelDTO.getNodeType());
+                        node.setWorkflow(workflow);
+                        node.setCanExecuteParallel(levelDTO.getCanExecuteParallel());
+                        node.setRetriesLeft(nodeDTO.getRetry() != null ? nodeDTO.getRetry() : 3);
+
+                        nodesList.add(node);
+                    }
                 }
-                nodesList.add(node);
             }
         }
         workflow.setNodes(nodesList);
+
         Workflow savedWorkflow = workflowRepository.save(workflow);
+        log.info("Workflow saved with ID: " + savedWorkflow.getId());
         return savedWorkflow;
     }
 
@@ -65,13 +70,23 @@ public class MainService {
             throw new IllegalArgumentException("Workflow name is required.");
         }
 
-        if (dto.getNodes() == null || dto.getNodes().isEmpty()) {
+        if (dto.getWorkflowNodesData() == null || dto.getWorkflowNodesData().isEmpty()) {
+            throw new IllegalArgumentException("Workflow must contain at least one node level.");
+        }
+
+        List<WorkflowNodesDTO.LevelWrapper> allNodes = new ArrayList<>();
+        for (WorkflowNodesDTO levelDTO : dto.getWorkflowNodesData()) {
+            if (levelDTO.getNodes() != null) {
+                allNodes.addAll(levelDTO.getNodes());
+            }
+        }
+
+        if (allNodes.isEmpty()) {
             throw new IllegalArgumentException("Workflow must contain at least one node.");
         }
 
-        // 2️⃣ Ensure unique node IDs
         List<Long> nodeIds = new ArrayList<>();
-        for (WorkflowNodesDTO node : dto.getNodes()) {
+        for (WorkflowNodesDTO.LevelWrapper node : allNodes) {
             if (node.getNodeId() == null) {
                 throw new IllegalArgumentException("Each node must have a nodeId.");
             }
@@ -81,46 +96,36 @@ public class MainService {
             nodeIds.add(node.getNodeId());
         }
 
-        // 3️⃣ Prevent self-loops
-        for (WorkflowNodesDTO node : dto.getNodes()) {
-            if (node.getInputNodes() != null && node.getInputNodes().contains(node.getNodeId())) {
+        for (WorkflowNodesDTO.LevelWrapper node : allNodes) {
+            if (node.getInputSources() != null && node.getInputSources().contains(node.getNodeId())) {
                 throw new IllegalArgumentException("Node " + node.getNodeId() + " cannot reference itself as input.");
             }
-            if (node.getOutputNodes() != null && node.getOutputNodes().contains(node.getNodeId())) {
+            if (node.getOutputSources() != null && node.getOutputSources().contains(node.getNodeId())) {
                 throw new IllegalArgumentException("Node " + node.getNodeId() + " cannot reference itself as output.");
             }
-        }
 
-        // check if nodeIds which contain all nodes, and there is any input or output
-        // node which is not in the nodeIds list
-        for (WorkflowNodesDTO node : dto.getNodes()) {
-            if (node.getInputNodes() != null) {
-                for (Long inputId : node.getInputNodes()) {
+            if (node.getInputSources() != null) {
+                for (Long inputId : node.getInputSources()) {
                     if (!nodeIds.contains(inputId)) {
                         throw new IllegalArgumentException(
                                 "Node " + node.getNodeId() + " has invalid input reference: " + inputId);
                     }
                 }
             }
-            if (node.getOutputNodes() != null) {
-                for (Long outputId : node.getOutputNodes()) {
+
+            if (node.getOutputSources() != null) {
+                for (Long outputId : node.getOutputSources()) {
                     if (!nodeIds.contains(outputId)) {
                         throw new IllegalArgumentException(
                                 "Node " + node.getNodeId() + " has invalid output reference: " + outputId);
                     }
                 }
             }
-        }
 
-        for (WorkflowNodesDTO node : dto.getNodes()) {
             if (node.getNodeData() == null) {
-                throw new IllegalArgumentException(
-                        "Node " + node.getNodeId() + " must have nodeData defined.");
+                throw new IllegalArgumentException("Node " + node.getNodeId() + " must have nodeData defined.");
             }
         }
-
-        // parallel execution check, maybe later allowing user to complete one level first then move to another or each node wait for atleast one input node to complete
-        // and then execute
     }
 
 }

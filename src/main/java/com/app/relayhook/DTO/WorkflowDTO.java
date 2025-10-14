@@ -31,8 +31,8 @@ public class WorkflowDTO {
 
     private String webhookUrl;
 
-    private Map<String, Object> metadata;
+    private Map<String, Object> metaData;
 
-    private List<WorkflowNodesDTO> nodes;
+    private List<WorkflowNodesDTO> workflowNodesData;
 
 }

@@ -1,6 +1,8 @@
 package com.app.relayhook.Controller;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.app.relayhook.DTO.WorkflowDTO;
@@ -17,7 +19,10 @@ public class MainController {
 
     private final MainService mainService;
 
-    public Object saveWorkflow(WorkflowDTO workflowDTO) {
+    @PostMapping("/save-workflow")
+    public Object saveWorkflow(@RequestBody WorkflowDTO workflowDTO) {
+        // return workflowDTO;
+        log.info("save workflow init");
         return mainService.saveWorkflow(workflowDTO);
     }
 }
