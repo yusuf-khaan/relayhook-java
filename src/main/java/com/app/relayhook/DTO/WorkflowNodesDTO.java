@@ -25,7 +25,7 @@ public class WorkflowNodesDTO {
     private List<LevelWrapper> nodes;
 
     private Boolean canExecuteParallel;
-    
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
@@ -35,6 +35,9 @@ public class WorkflowNodesDTO {
         private List<Long> inputSources;
         private List<Long> outputSources;
         private Map<String, Object> nodeData;
+        private Map<String, Object> inputSchema;
+        private Map<String, Object> processingSchema;
+        private Map<String, Object> outputSchema;
     }
 
 }
