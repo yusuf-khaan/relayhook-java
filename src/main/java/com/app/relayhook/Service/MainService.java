@@ -3,13 +3,17 @@ package com.app.relayhook.Service;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.app.relayhook.DTO.WorkflowDTO;
 import com.app.relayhook.DTO.WorkflowNodesDTO;
+import com.app.relayhook.Models.SystemIntegrations;
 import com.app.relayhook.Models.Workflow;
 import com.app.relayhook.Models.WorkflowNodes;
+import com.app.relayhook.Repository.SystemIntegrationsRepository;
 import com.app.relayhook.Repository.WorkflowRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -21,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 public class MainService {
 
     private final WorkflowRepository workflowRepository;
+    private final SystemIntegrationsRepository systemIntegrationsRepository;
 
     @Transactional
     public Workflow saveWorkflow(WorkflowDTO dto) {
@@ -125,6 +130,15 @@ public class MainService {
             if (node.getNodeData() == null) {
                 throw new IllegalArgumentException("Node " + node.getNodeId() + " must have nodeData defined.");
             }
+        }
+    }
+
+    public Page<SystemIntegrations> getAllIntegrations(Pageable pageable, String search) {
+        if (search == null || search.isBlank()) {
+            return systemIntegrationsRepository.findAll(pageable);
+        } else {
+            return systemIntegrationsRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+                    search, search, pageable);
         }
     }
 
