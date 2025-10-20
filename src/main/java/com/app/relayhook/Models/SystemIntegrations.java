@@ -36,6 +36,8 @@ public class SystemIntegrations {
 
     private String baseUrl;
 
+    private String provider;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;

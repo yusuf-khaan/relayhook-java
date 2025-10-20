@@ -2,6 +2,7 @@ package com.app.relayhook.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.app.relayhook.DTO.WorkflowDTO;
 import com.app.relayhook.DTO.WorkflowNodesDTO;
+import com.app.relayhook.Integrations.Relayhook.RelayhookAbs;
 import com.app.relayhook.Models.SystemIntegrations;
 import com.app.relayhook.Models.Workflow;
 import com.app.relayhook.Models.WorkflowNodes;
@@ -26,6 +28,7 @@ public class MainService {
 
     private final WorkflowRepository workflowRepository;
     private final SystemIntegrationsRepository systemIntegrationsRepository;
+    private final RelayhookAbs relayhookAbs;
 
     @Transactional
     public Workflow saveWorkflow(WorkflowDTO dto) {
@@ -137,6 +140,8 @@ public class MainService {
         if (search == null || search.isBlank()) {
             return systemIntegrationsRepository.findAll(pageable);
         } else {
+            Map<String,Object> abd = relayhookAbs.getProvidersMetaData(List.of("x", "gmail","instagram"));
+            log.info(abd);
             return systemIntegrationsRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
                     search, search, pageable);
         }

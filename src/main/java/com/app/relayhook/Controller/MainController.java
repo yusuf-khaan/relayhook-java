@@ -40,6 +40,5 @@ public Page<SystemIntegrations> getAllIntegrations(
         @RequestParam(required = false) String search,
         @PageableDefault(size = 10) Pageable pageable) {
     return mainService.getAllIntegrations(pageable, search);
-}
-    
+}    
 }
