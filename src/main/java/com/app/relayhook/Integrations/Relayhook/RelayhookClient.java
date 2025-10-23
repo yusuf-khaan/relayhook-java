@@ -1,6 +1,5 @@
 package com.app.relayhook.Integrations.Relayhook;
 
-
 import java.util.List;
 import java.util.Map;
 
@@ -12,9 +11,11 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -23,7 +24,7 @@ public class RelayhookClient implements RelayhookAbs {
 
     private RestTemplate restTemplate;
     private HttpHeaders headers = new HttpHeaders();
-
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${spring.relayhook.baseurl}")
     private String relayhookBaseUrl;
@@ -31,7 +32,7 @@ public class RelayhookClient implements RelayhookAbs {
     @Autowired
     RelayhookClient(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
-        relayhookBaseUrl = relayhookBaseUrl+"/api";
+        relayhookBaseUrl = relayhookBaseUrl + "/api";
     }
 
     private void getInstance() {
@@ -40,33 +41,41 @@ public class RelayhookClient implements RelayhookAbs {
     }
 
     /**
-     * Sends HTTP request and returns only the body as String.
+     * Sends HTTP request and returns body as ObjectNode (mutable JSON).
      */
-    public String sendRequest(String method, String url, Map<String, Object> params, boolean ignoreError) {
+    public JsonNode sendRequest(
+            String method,
+            String url,
+            Map<String, Object> params,
+            boolean ignoreError) {
         url = relayhookBaseUrl+url;
+        log.info(url);
         getInstance();
         method = method.toUpperCase();
-        HttpEntity<Object> entity = new HttpEntity<>(null);
-        if (!method.toLowerCase().equals("get")) {
-            entity = new HttpEntity<>(params, headers);
-        } else {
-            url = paramBuilder(url, params);
-        }
+
+        HttpEntity<Object> entity = "GET".equals(method)
+                ? new HttpEntity<>(headers)
+                : new HttpEntity<>(params, headers);
 
         try {
-            ResponseEntity<Map<String,Object> response = restTemplate.exchange(
+            ResponseEntity<String> response = restTemplate.exchange(
                     url,
                     HttpMethod.valueOf(method),
                     entity,
                     String.class);
 
-            return response.getBody(); // ✅ Only JSON body
-
-        } catch (HttpServerErrorException e) {
-            if (!ignoreError) {
-                throw new RuntimeException("Server error: " + e.getResponseBodyAsString(), e);
+            String jsonResponse = response.getBody();
+            if (jsonResponse == null || jsonResponse.isBlank()) {
+                return objectMapper.createObjectNode();
             }
-            return e.getResponseBodyAsString();
+            // Cast to ObjectNode for mutability
+            return objectMapper.readTree(jsonResponse);
+
+        } catch (Exception e) {
+            if (!ignoreError) {
+                throw new RuntimeException("Unexpected error: " + e.getMessage(), e);
+            }
+            return objectMapper.createObjectNode();
         }
     }
 
@@ -78,8 +87,7 @@ public class RelayhookClient implements RelayhookAbs {
         return builder.toUriString();
     }
 
-    public Map<String,Object> getProvidersMetaData(List<String> providersList){
-        return sendRequest("POST", "/integration/get-provider-metadata", Map.of("provider",providersList), false);
+    public JsonNode getProvidersMetaData(List<String> providersList) {
+        return sendRequest("POST", "/api/integration/get-provider-metadata", Map.of("provider", providersList), false);
     }
-
 }

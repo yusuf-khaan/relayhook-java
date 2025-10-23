@@ -1,8 +1,11 @@
 package com.app.relayhook.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +20,10 @@ import com.app.relayhook.Models.Workflow;
 import com.app.relayhook.Models.WorkflowNodes;
 import com.app.relayhook.Repository.SystemIntegrationsRepository;
 import com.app.relayhook.Repository.WorkflowRepository;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +36,7 @@ public class MainService {
     private final WorkflowRepository workflowRepository;
     private final SystemIntegrationsRepository systemIntegrationsRepository;
     private final RelayhookAbs relayhookAbs;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public Workflow saveWorkflow(WorkflowDTO dto) {
@@ -136,15 +144,46 @@ public class MainService {
         }
     }
 
-    public Page<SystemIntegrations> getAllIntegrations(Pageable pageable, String search) {
+    public Object getAllIntegrations(Pageable pageable, String search) {
+        Page<SystemIntegrations> providerPage;
+
         if (search == null || search.isBlank()) {
-            return systemIntegrationsRepository.findAll(pageable);
+            providerPage = systemIntegrationsRepository.findAll(pageable);
         } else {
-            Map<String,Object> abd = relayhookAbs.getProvidersMetaData(List.of("x", "gmail","instagram"));
-            log.info(abd);
-            return systemIntegrationsRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
-                    search, search, pageable);
+            providerPage = systemIntegrationsRepository
+                    .findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(search, search, pageable);
         }
+        List<String> providerNames = providerPage.stream()
+                .map(SystemIntegrations::getName)
+                .collect(Collectors.toList());
+        JsonNode providerListJson = objectMapper.valueToTree(providerPage);
+        JsonNode providersMetaDataArray = relayhookAbs.getProvidersMetaData(providerNames);
+        Map<String, JsonNode> metadataMap = new HashMap<>();
+        if (providersMetaDataArray != null && providersMetaDataArray.isArray()) {
+            for (JsonNode node : providersMetaDataArray) {
+                String providerKey = node.path("provider").asText();
+                JsonNode metadata = node.path("metadata");
+                if (!providerKey.isBlank() && !metadata.isMissingNode()) {
+                    metadataMap.put(providerKey, metadata);
+                }
+            }
+        }
+
+        JsonNode contentNode = providerListJson.path("content");
+        if (contentNode.isArray()) {
+            for (JsonNode node : contentNode) {
+                if (node.isObject()) {
+                    ObjectNode objNode = (ObjectNode) node;
+                    String providerKey = objNode.path("provider").asText();
+                    JsonNode metadata = metadataMap.get(providerKey);
+                    if (metadata != null) {
+                        objNode.set("metadata", metadata);
+                    }
+                }
+            }
+        }
+
+        return providerListJson;
     }
 
 }

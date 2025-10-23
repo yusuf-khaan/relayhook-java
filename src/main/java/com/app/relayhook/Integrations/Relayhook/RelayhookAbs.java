@@ -1,10 +1,12 @@
 package com.app.relayhook.Integrations.Relayhook;
 
 import java.util.List;
-import java.util.Map;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public interface RelayhookAbs {
 
-    abstract public Map<String,Object> getProvidersMetaData(List<String> providersList);
+    abstract public JsonNode getProvidersMetaData(List<String> providersList);
 
 }
