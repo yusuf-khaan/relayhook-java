@@ -7,7 +7,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
@@ -34,5 +33,4 @@ public class WorkflowDTO {
     private Map<String, Object> metaData;
 
     private List<WorkflowNodesDTO> workflowNodesData;
-
 }

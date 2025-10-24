@@ -34,10 +34,44 @@ public class WorkflowNodesDTO {
         private Integer retry = 3;
         private List<Long> inputSources;
         private List<Long> outputSources;
-        private Map<String, Object> nodeData;
-        private Map<String, Object> inputSchema;
-        private Map<String, Object> processingSchema;
-        private Map<String, Object> outputSchema;
+        private NodeDataWrapper nodeData;
+        private SchemaDataWrapper schemaData;
     }
 
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class NodeDataWrapper {
+        private Long id;
+        private Long x;
+        private Long y;
+        private IntegrationDataObjectWrapper object;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class IntegrationDataObjectWrapper {
+        private Long id;
+        private String name;
+        private String description;
+        private String action;
+        private String apiUrl;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class SchemaDataWrapper {
+        private Long nodeId;
+        private List<ProcessingSchemaWrapper> processingSchema;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class ProcessingSchemaWrapper {
+        private String inputKey;
+        private String mappedWith;
+    }
 }

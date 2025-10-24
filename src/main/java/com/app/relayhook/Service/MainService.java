@@ -63,7 +63,7 @@ public class MainService {
                         node.setNodeId(nodeDTO.getNodeId());
                         node.setInputNodes(nodeDTO.getInputSources());
                         node.setOutputNodes(nodeDTO.getOutputSources());
-                        node.setNodeData(nodeDTO.getNodeData());
+                        // node.setNodeData(nodeDTO.getNodeData());
                         node.setNodeType(levelDTO.getNodeType());
                         node.setWorkflow(workflow);
                         node.setCanExecuteParallel(levelDTO.getCanExecuteParallel());
