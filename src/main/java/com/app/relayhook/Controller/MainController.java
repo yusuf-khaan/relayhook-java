@@ -29,9 +29,9 @@ public class MainController {
 
     @PostMapping("/save-workflow")
     public Object saveWorkflow(HttpServletRequest request, @RequestBody WorkflowDTO workflowDTO) {
-        // return workflowDTO;
-        log.info("save workflow init");
-        return mainService.saveWorkflow(workflowDTO);
+        return workflowDTO;
+        // log.info("save workflow init");
+        // return mainService.saveWorkflow(workflowDTO);
     }
 
     @GetMapping("get-active-integrations")
