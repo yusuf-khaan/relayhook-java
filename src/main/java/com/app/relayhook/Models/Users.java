@@ -35,6 +35,10 @@ public class Users {
 
     @OneToMany(mappedBy = "user")
     @JsonIgnore
+    private List<UserIntegrationsCredentials> userIntegrationsCredentials;
+
+    @OneToMany(mappedBy = "user")
+    @JsonIgnore
     private List<Workflow> workflow;
 
     @CreationTimestamp
