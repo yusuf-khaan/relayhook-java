@@ -9,6 +9,8 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitMqConfig {
+
+    // exchange name + routing key define whihc queue to deliver
     // “Send this message to the exchange named EXCHANGE_NAME, and attach the routing key ROUTING_KEY so the exchange knows which queue to deliver it to.”
 
     public static final String EXECUTE_EXCHANGE = "workflow.exchange";

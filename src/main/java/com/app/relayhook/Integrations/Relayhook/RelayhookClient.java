@@ -90,4 +90,15 @@ public class RelayhookClient implements RelayhookAbs {
     public JsonNode getProvidersMetaData(List<String> providersList) {
         return sendRequest("POST", "/api/integration/get-provider-metadata", Map.of("provider", providersList), false);
     }
+
+    public JsonNode executeAutomationRequest(Map<String,Object> request, String action, String provider) {
+        String url = buildUrlForExecutions(provider, action);
+        return sendRequest("POST", url, request, false);
+    }
+
+    private String buildUrlForExecutions(String provider, String action){
+        String automationPrefix = "/api/integration/action";
+        String automationUrl = automationPrefix+"/"+provider+"/"+action;
+        return automationUrl;
+    }
 }

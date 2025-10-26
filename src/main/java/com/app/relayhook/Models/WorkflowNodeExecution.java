@@ -15,6 +15,8 @@ import com.vladmihalcea.hibernate.type.json.JsonType;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -39,8 +41,10 @@ public class WorkflowNodeExecution {
     @ManyToOne(fetch = FetchType.LAZY)
     private WorkflowExecution workflowExecution;
 
+    // this reference to the workflow postgres node id, not inner node id
     private Long workflowNodeId;
 
+    @Enumerated(EnumType.STRING)
     private NodeStatus status = NodeStatus.PENDING;
 
     private Long retriesLeft = 3L;
@@ -59,6 +63,8 @@ public class WorkflowNodeExecution {
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Map<String,Object> outputData;
+
+    private Long level;
 
     @ElementCollection
     private List<String> errorLogs;

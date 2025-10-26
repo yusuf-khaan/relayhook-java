@@ -6,12 +6,16 @@ import java.util.Map;
 import org.slf4j.event.Level;
 
 import com.app.relayhook.Enums.NodeType;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 import jakarta.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -34,8 +38,8 @@ public class WorkflowNodesDTO {
         private Integer retry = 3;
         private List<Long> inputSources;
         private List<Long> outputSources;
-        private NodeDataWrapper nodeData;
-        private SchemaDataWrapper schemaData;
+        private NodeDataWrapper nodeData = null;
+        private SchemaDataWrapper schemaData = null;
     }
 
     @Data

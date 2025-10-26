@@ -39,15 +39,18 @@ public class WorkflowNodes {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private Long level;
     private Long nodeId;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     private List<Long> inputNodes;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     private List<Long> outputNodes;
 
-    private Long level;
+    private String action = null;
+    private String provider = null;
+
 
     private Boolean canExecuteParallel = true;
 
@@ -64,7 +67,7 @@ public class WorkflowNodes {
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> output;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JsonIgnore
     private Workflow workflow;
 

@@ -1,0 +1,9 @@
+[2025-10-26T13:29:00.661700531] Message: "Received execution request for nodeExecutionId: 109" | Error: No exception
+[2025-10-26T13:29:00.680789137] Message: "Marked nodeExecutionId 109 as RUNNING" | Error: No exception
+[2025-10-26T13:29:00.700405569] Message: "Fetched node metadata for nodeId 1 (Action: sendEmail, Provider: gmail)" | Error: No exception
+[2025-10-26T13:29:00.707091588] Message: "Executing node ID 109 (Action: sendEmail, Provider: gmail) with input: {to=khanyusuf0966@gmail.com, message=Hello there 👋, we're glad to have you onboard., rawHtml=<h2>Welcome to <b>RelayHooks</b>!</h2><p>We’re glad to have you. Start exploring your integrations today 🚀</p>, subject=Welcome to RelayHooks!}" | Error:ror: No exception
+[2025-10-26T13:29:01.472272943] Message: "Marked nodeExecutionId 109 as COMPLETED" | Error: No exception
+[2025-10-26T13:29:01.552560110] Message: "Level map keys: [1, 2, 3]" | Error: No exception
+[2025-10-26T13:29:01.552788439] Message: "Completed node: 109, level: 1" | Error: No exception
+[2025-10-26T13:29:01.552901402] Message: "Next level to schedule: 2" | Error: No exception
+[2025-10-26T13:29:01.626992494] Message: "NodeExecution ID 109 failed for Node ID 1. Exception: No value present" | Error: java.util.NoSuchElementException: No value present

@@ -1,5 +1,6 @@
 package com.app.relayhook.Models;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
@@ -64,14 +65,14 @@ public class Workflow {
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    private Map<String, Object> metadata;
+    private Map<String, Object> metadata = null;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnore
     private Users user;
 
-    @OneToMany(mappedBy = "workflow", fetch = FetchType.LAZY)
-    private List<WorkflowNodes> nodes;
+    @OneToMany(mappedBy = "workflow", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<WorkflowNodes> workflowNodesData;
 
     @CreationTimestamp
     @Column(updatable = false)

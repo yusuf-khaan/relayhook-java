@@ -19,6 +19,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import lombok.AllArgsConstructor;
@@ -37,7 +38,7 @@ public class WorkflowExecution {
 
     private WorkflowStatus status = WorkflowStatus.STARTED;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnore
     private Workflow workflow;
 
@@ -56,7 +57,6 @@ public class WorkflowExecution {
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> metaData;
 
-    @ElementCollection
-    @OneToMany(mappedBy = "workflowExecution")
+    @OneToMany(mappedBy = "workflowExecution", fetch = FetchType.LAZY)
     private List<WorkflowNodeExecution> workflowExecutionNodes;
 }

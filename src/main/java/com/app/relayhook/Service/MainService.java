@@ -20,6 +20,7 @@ import com.app.relayhook.Models.Workflow;
 import com.app.relayhook.Models.WorkflowNodes;
 import com.app.relayhook.Repository.SystemIntegrationsRepository;
 import com.app.relayhook.Repository.WorkflowRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -45,7 +46,7 @@ public class MainService {
         Workflow workflow = new Workflow();
         workflow.setName(dto.getName());
         workflow.setDescription(dto.getDescription());
-        workflow.setWorkflowData(dto.getWorkflowData());
+        workflow.setWorkflowData(objectMapper.convertValue(dto, new TypeReference<Map<String,Object>>() {}));
         workflow.setTrigger(dto.getTrigger());
         workflow.setSettings(dto.getSettings());
         workflow.setCanExecuteParallel(dto.getCanExecuteParallel());
@@ -60,24 +61,22 @@ public class MainService {
                 if (levelDTO.getNodes() != null) {
                     for (WorkflowNodesDTO.LevelWrapper nodeDTO : levelDTO.getNodes()) {
                         WorkflowNodes node = new WorkflowNodes();
+                        node.setLevel(levelDTO.getLevel());
                         node.setNodeId(nodeDTO.getNodeId());
                         node.setInputNodes(nodeDTO.getInputSources());
                         node.setOutputNodes(nodeDTO.getOutputSources());
-                        // node.setNodeData(nodeDTO.getNodeData());
+                        node.setNodeData(objectMapper.convertValue(nodeDTO.getNodeData(), new TypeReference<Map<String,Object>>(){}));
                         node.setNodeType(levelDTO.getNodeType());
                         node.setWorkflow(workflow);
                         node.setCanExecuteParallel(levelDTO.getCanExecuteParallel());
                         node.setRetriesLeft(nodeDTO.getRetry() != null ? nodeDTO.getRetry() : 3);
-
                         nodesList.add(node);
                     }
                 }
             }
         }
-        workflow.setNodes(nodesList);
-
+        workflow.setWorkflowNodesData(nodesList);
         Workflow savedWorkflow = workflowRepository.save(workflow);
-        log.info("Workflow saved with ID: " + savedWorkflow.getId());
         return savedWorkflow;
     }
 

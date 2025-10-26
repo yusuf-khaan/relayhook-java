@@ -1,5 +1,6 @@
 package com.app.relayhook.Service;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -24,18 +25,21 @@ public class WebhookService {
     private final WorkflowExecutorService workflowExecutorService;
     private final RabbitTemplate rabbitTemplate;
 
-    public void createExecutionOfWorkflow(long workflowId, Map<String, Object> requestData){
-
+    public void createExecutionOfWorkflow(long workflowId, Map<String, Long> requestData) {
+        Map<String, Long> payload = new HashMap<>();
+        payload.put("workflowNodeId", 1L);
+        payload.put("workflowExecutionNodeId", 3L);
         log.info("Webhook hit");
         rabbitTemplate.convertAndSend(
-                        RabbitMqConfig.EXECUTE_EXCHANGE,
-                        RabbitMqConfig.EXECUTE_ROUTING_KEY,
-                        50L);
+                RabbitMqConfig.EXECUTE_EXCHANGE,
+                RabbitMqConfig.EXECUTE_ROUTING_KEY,
+                requestData);
         // Optional<Workflow> workflowOpt = workflowRepository.findById(workflowId);
         // if(workflowOpt.isEmpty()){
-        //     return;
+        // return;
         // }
-        // workflowExecutorService.executeAndPersistWorkflow(workflowOpt.get(), requestData);
+        // workflowExecutorService.executeAndPersistWorkflow(workflowOpt.get(),
+        // requestData);
     }
 
 }
