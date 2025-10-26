@@ -38,55 +38,29 @@ public class WorkflowExecutorService {
     private final WorkflowRepository workflowRepo;
     private final WorkflowNodeRepository workflowNodeRepository;
 
-      @Transactional
+    @Transactional
     public Workflow executeAndPersistWorkflow(Workflow workflow, Map<String, Object> requestData) {
 
-        // 1️⃣ Persist workflow execution
         WorkflowExecution workflowExecution = new WorkflowExecution();
         workflowExecution.setWorkflow(workflow);
         workflowExecution.setTrigger(workflow.getTrigger());
-        workflowExecution = workflowExecutionRepository.save(workflowExecution);
+        workflowExecution = workflowExecutionRepository.saveAndFlush(workflowExecution);
 
-        // 2️⃣ Persist all node executions
-        List<WorkflowNodeExecution> nodeExecutions = new ArrayList<>();
         for (WorkflowNodes node : workflow.getWorkflowNodesData()) {
-            WorkflowNodeExecution nodeExecution = new WorkflowNodeExecution();
-            nodeExecution.setWorkflowExecution(workflowExecution);
-            nodeExecution.setWorkflowNodeId(node.getId());
-            nodeExecution.setStatus(NodeStatus.PENDING);
-            nodeExecution.setLevel(node.getLevel());
-            nodeExecution.setCanExecuteParallel(node.getCanExecuteParallel());
-            nodeExecution.setRetriesLeft(3L);
-            nodeExecution.setOutputData(Map.of());
-            nodeExecution.setErrorLogs(new ArrayList<>());
-            nodeExecutions.add(nodeExecution);
-        }
-
-        List<WorkflowNodeExecution> savedNodeExecutions = workflowNodeExecutionRepository.saveAll(nodeExecutions);
-        workflowExecution.setWorkflowExecutionNodes(savedNodeExecutions);
-
-        // 3️⃣ Schedule start nodes outside transaction
-        for (WorkflowNodeExecution nodeExecution : savedNodeExecutions) {
-            WorkflowNodes node = workflowNodeRepository.findById(nodeExecution.getWorkflowNodeId()).orElseThrow();
             if (node.getInputNodes().isEmpty()) {
-                WorkflowNodeExecution startNodeExecution = nodeExecution;
-                startNodeExecution.setInputData(requestData);
-                workflowNodeExecutionRepository.saveAndFlush(startNodeExecution);
+                Map<String, Object> payload = new HashMap<>();
+                payload.put("OriginalworkflowNodeId", node.getId());
+                payload.put("workflowExecutionId", workflowExecution.getId());
+                payload.put("inputData", requestData);
 
-                Map<String, Long> payload = new HashMap<>();
-                payload.put("workflowNodeId", node.getId());
-                payload.put("workflowExecutionNodeId", startNodeExecution.getId());
-
-                // ✅ Send message after transaction commits
                 TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
                     @Override
                     public void afterCommit() {
                         rabbitTemplate.convertAndSend(
                                 RabbitMqConfig.EXECUTE_EXCHANGE,
                                 RabbitMqConfig.EXECUTE_ROUTING_KEY,
-                                payload
-                        );
-                        log.info("Enqueued start node to RabbitMQ: {}", payload);
+                                payload);
+                        log.info("Enqueued root node to RabbitMQ: {}", payload);
                     }
                 });
             }

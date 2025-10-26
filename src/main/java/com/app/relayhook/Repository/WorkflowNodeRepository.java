@@ -4,6 +4,7 @@ import org.springframework.stereotype.Repository;
 
 import com.app.relayhook.Models.WorkflowNodes;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -14,5 +15,7 @@ public interface WorkflowNodeRepository extends JpaRepository<WorkflowNodes, Lon
 
      @EntityGraph(attributePaths = {"inputNodes", "outputNodes"})
     Optional<WorkflowNodes> findWithNodesById(Long id);
+    Optional<WorkflowNodes> findByNodeIdAndWorkflowId(Long nodeId, Long workflowId);
+    List<WorkflowNodes> findByWorkflowIdAndInputNodesContaining(Long workflowId, Long inputNodeId);
 
 }

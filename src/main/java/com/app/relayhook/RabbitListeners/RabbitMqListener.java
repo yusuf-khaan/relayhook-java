@@ -17,6 +17,7 @@ import com.app.relayhook.Logs.NodeErrorLogger;
 import com.app.relayhook.Models.WorkflowExecution;
 import com.app.relayhook.Models.WorkflowNodeExecution;
 import com.app.relayhook.Models.WorkflowNodes;
+import com.app.relayhook.Repository.WorkflowExecutionRepository;
 import com.app.relayhook.Repository.WorkflowNodeExecutionRepository;
 import com.app.relayhook.Repository.WorkflowNodeRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -32,37 +33,75 @@ import lombok.extern.slf4j.Slf4j;
 public class RabbitMqListener {
 
     private final WorkflowNodeExecutionRepository workflowNodeExecutionRepository;
-    private final WorkflowNodeRepository nodeRepo;
+    private final WorkflowExecutionRepository workflowExecutionRepository;
     private final RabbitTemplate rabbitTemplate;
     private final RelayhookAbs relayhookAbs;
     private final ObjectMapper objectMapper;
+    private final WorkflowNodeRepository workflowNodeRepository;
     private String action = null;
     private String provider = null;
 
     @RabbitListener(queues = RabbitMqConfig.EXECUTE_QUEUE)
-    public void processNode(Map<String, Long> workflowNodesDetail) {
-        Long nodeExecutionId = workflowNodesDetail.get("workflowExecutionNodeId");
-        NodeErrorLogger.logError("Received execution request for nodeExecutionId: " + nodeExecutionId);
+    public void processNode(Map<String, Object> workflowNodesDetail) {
+        Number workflowNodeIdNum = (Number) workflowNodesDetail.get("OriginalworkflowNodeId");
+        Long orginalWorkflowId = workflowNodeIdNum.longValue();
 
-        WorkflowNodeExecution nodeExecution = markNodeRunning(nodeExecutionId);
+        Number workflowExecutionIdNum = (Number) workflowNodesDetail.get("workflowExecutionId");
+        Long workflowExecutionId = workflowExecutionIdNum.longValue();
+
+        Map<String, Object> testData = objectMapper.convertValue(workflowNodesDetail.get("inputData"),
+                new TypeReference<Map<String, Object>>() {
+                });
+                                Map<String, Object> requestData = new HashMap<>();
+        testData.put("to", "khanyusuf0966@gmail.com");
+        testData.put("subject", "Welcome to RelayHooks!");
+        testData.put("message", "Hello there 👋, we're glad to have you onboard.");
+        testData.put("rawHtml", "<h2>Welcome to <b>RelayHooks</b>!</h2><p>We’re glad to have you. Start exploring your integrations today 🚀</p>");
+
+        WorkflowNodes workflowNode = workflowNodeRepository.findById(orginalWorkflowId).orElseThrow();
+        WorkflowExecution workflowExecution = workflowExecutionRepository.findById(workflowExecutionId).orElseThrow();
+        WorkflowNodeExecution workflowNodeExecution = createExecutionWorkflowNode(workflowExecution, workflowNode,
+                requestData);
+        workflowNodeExecution = markNodeRunning(workflowNodeExecution.getId());
         Map<String, Object> outputData = new HashMap<>();
+        Map<String, Object> object = objectMapper.convertValue(workflowNode.getNodeData().get("object"),
+                new TypeReference<Map<String, Object>>() {
+                });
+        NodeErrorLogger.logError("workflowNode 123458"+object);
+        this.action = object.get("action").toString();
+        this.provider = object.get("name").toString();
 
         try {
-            WorkflowNodes node = fetchNodeEager(nodeExecution.getWorkflowNodeId());
-            NodeErrorLogger.logError("Executing node ID " + nodeExecution.getId() + " (Action: " + action + ", Provider: " + provider + ") with input: " + nodeExecution.getInputData());
-
-            outputData = executeNode(node, nodeExecution.getInputData());
-
-            NodeErrorLogger.logError("Node ID " + nodeExecution.getId() + " execution output: " + outputData);
-
-            markNodeCompleted(nodeExecution, outputData);
-
+            NodeErrorLogger.logError("Executing node ID " + workflowNodeExecution.getId() + " (Action: " + action
+                    + ", Provider: " + provider + ") with input: " + workflowNodeExecution.getInputData());
+            outputData = executeNode(workflowNode, requestData);
+            workflowNodeExecution.setOutputData(outputData);
+            NodeErrorLogger.logError("Node ID " + workflowNodeExecution.getId());
+            workflowNodeExecution = markNodeCompleted(workflowNodeExecution, outputData);
             workflowNodeExecutionRepository.flush();
-            scheduleNextNodes(nodeExecution);
-
+            scheduleNextNodes(workflowNode, workflowNodeExecution);
         } catch (Exception e) {
-            markNodeFailed(nodeExecution, outputData, e);
+            markNodeFailed(workflowNodeExecution, outputData, e);
         }
+    }
+
+    @Transactional
+    public WorkflowNodeExecution createExecutionWorkflowNode(WorkflowExecution workflowExecution,
+            WorkflowNodes workflowNode, Map<String, Object> inputData) {
+        WorkflowNodeExecution nodeExecution = new WorkflowNodeExecution();
+        nodeExecution.setWorkflowExecution(workflowExecution);
+
+        // Reference the original workflow node
+        nodeExecution.setWorkflowNodeId(workflowNode.getId());
+        nodeExecution.setLevel(workflowNode.getLevel());
+        nodeExecution.setCanExecuteParallel(workflowNode.getCanExecuteParallel());
+        nodeExecution.setStatus(NodeStatus.PENDING);
+        nodeExecution.setRetriesLeft(3L);
+        nodeExecution.setInputData(inputData != null ? inputData : Map.of());
+        nodeExecution.setOutputData(Map.of());
+        nodeExecution.setErrorLogs(new ArrayList<>());
+        workflowNodeExecutionRepository.saveAndFlush(nodeExecution);
+        return nodeExecution;
     }
 
     @Transactional
@@ -76,12 +115,12 @@ public class RabbitMqListener {
     }
 
     @Transactional
-    protected void markNodeCompleted(WorkflowNodeExecution nodeExecution, Map<String, Object> outputData) {
+    protected WorkflowNodeExecution markNodeCompleted(WorkflowNodeExecution nodeExecution,
+            Map<String, Object> outputData) {
         nodeExecution.setStatus(NodeStatus.COMPLETED);
         nodeExecution.setOutputData(outputData);
-        workflowNodeExecutionRepository.saveAndFlush(nodeExecution);
-
         NodeErrorLogger.logError("Marked nodeExecutionId " + nodeExecution.getId() + " as COMPLETED");
+        return workflowNodeExecutionRepository.saveAndFlush(nodeExecution);
     }
 
     @Transactional
@@ -94,99 +133,72 @@ public class RabbitMqListener {
                 "NodeExecution ID %d failed for Node ID %d. Exception: %s",
                 nodeExecution.getId(),
                 nodeExecution.getWorkflowNodeId(),
-                e.getMessage()
-        );
+                e.getMessage());
         NodeErrorLogger.logError(errorMsg, e);
         log.error(errorMsg, e);
     }
 
-    @Transactional(readOnly = true)
-    protected WorkflowNodes fetchNodeEager(Long nodeId) {
-        WorkflowNodes node = nodeRepo.findById(nodeId)
-                .orElseThrow(() -> new RuntimeException("WorkflowNode not found with id: " + nodeId));
+    private Map<String, Object> executeNode(WorkflowNodes workflowNode, Map<String, Object> inputData) {
+        JsonNode json = relayhookAbs.executeAutomationRequest(inputData, action, provider);
+        return objectMapper.convertValue(json, new TypeReference<Map<String, Object>>() {
+        });
+    }
 
-        Map<String, Object> object = (Map<String, Object>) node.getNodeData().get("object");
-        if (object != null) {
-            this.action = (String) object.get("action");
-            this.provider = (String) object.get("name");
+    @Transactional
+    private void scheduleNextNodes(WorkflowNodes completedNode, WorkflowNodeExecution completedExecution) {
+        Long workflowId = completedNode.getWorkflow().getId();
+
+        // Find all nodes that depend on the completed one
+        List<WorkflowNodes> dependentNodes = workflowNodeRepository
+                .findByWorkflowIdAndInputNodesContaining(completedNode.getWorkflow().getId(),
+                        completedNode.getNodeId());
+
+        if (dependentNodes.isEmpty()) {
+            NodeErrorLogger.logError("No dependent nodes found for nodeId " + completedNode.getNodeId());
+            return;
         }
 
-        NodeErrorLogger.logError("Fetched node metadata for nodeId " + nodeId + " (Action: " + action + ", Provider: " + provider + ")");
-        return node;
-    }
+        // dependent node are next nodes
+        // For each dependent node, check if *all* its inputs are completed
+        for (WorkflowNodes WorkflowNode : dependentNodes) {
+            boolean allInputsDone = true;
+            if (WorkflowNode.getInputNodes() != null && !WorkflowNode.getInputNodes().isEmpty()) {
+                for (Long inputNodeId : WorkflowNode.getInputNodes()) {
+                    WorkflowNodes inputNode = workflowNodeRepository.findByNodeIdAndWorkflowId(inputNodeId, workflowId)
+                            .orElse(null);
+                    if (inputNode == null) {
+                        allInputsDone = false;
+                        break;
+                    }
 
-    private Map<String, Object> executeNode(WorkflowNodes node, Map<String, Object> inputData) {
-        JsonNode json = relayhookAbs.executeAutomationRequest(inputData, action, provider);
-        return objectMapper.convertValue(json, new TypeReference<Map<String, Object>>() {});
-    }
+                    // Fetch execution record for that input node
+                    WorkflowNodeExecution exec = workflowNodeExecutionRepository
+                            .findTopByWorkflowNodeIdAndWorkflowExecutionIdOrderByIdDesc(
+                                    inputNode.getId(),
+                                    completedExecution.getWorkflowExecution().getId());
 
-   private void scheduleNextNodes(WorkflowNodeExecution completedNode) {
-    WorkflowExecution execution = completedNode.getWorkflowExecution();
-    List<WorkflowNodeExecution> allNodes = workflowNodeExecutionRepository.findByWorkflowExecution(execution);
+                    if (exec == null || exec.getStatus() != NodeStatus.COMPLETED) {
+                        allInputsDone = false;
+                        break;
+                    }
+                }
+            }
 
-    // Build a map of nodeId -> WorkflowNodes
-    Map<Long, WorkflowNodes> nodeMetaMap = new HashMap<>();
-    for (WorkflowNodeExecution ne : allNodes) {
-        nodeMetaMap.put(ne.getWorkflowNodeId(), nodeRepo.findById(ne.getWorkflowNodeId()).orElseThrow());
-    }
-
-    // Group nodes by level (use Long as key to avoid type mismatch)
-    Map<Long, List<WorkflowNodeExecution>> levelMap = new HashMap<>();
-    for (WorkflowNodeExecution ne : allNodes) {
-        Long level = nodeMetaMap.get(ne.getWorkflowNodeId()).getLevel();
-        levelMap.computeIfAbsent(level, k -> new ArrayList<>()).add(ne);
-    }
-
-    NodeErrorLogger.logError("Level map keys: " + levelMap.keySet());
-    NodeErrorLogger.logError("Completed node: " + completedNode.getId() + ", level: " + completedNode.getLevel());
-
-    // Determine next level
-    Long completedLevel = nodeMetaMap.get(completedNode.getWorkflowNodeId()).getLevel();
-    Long nextLevel = completedLevel + 1;
-    NodeErrorLogger.logError("Next level to schedule: " + nextLevel);
-
-    List<WorkflowNodeExecution> nextLevelNodes = levelMap.get(nextLevel);
-    if (nextLevelNodes == null || nextLevelNodes.isEmpty()) {
-        NodeErrorLogger.logError("No nodes found for next level " + nextLevel + " after nodeExecutionId " + completedNode.getId());
-        return;
-    }
-
-    // Determine if nodes at this level can run in parallel
-    boolean canParallel = nextLevelNodes.get(0).getCanExecuteParallel();
-
-    for (WorkflowNodeExecution nextNodeExecution : nextLevelNodes) {
-        WorkflowNodes nextNodeMeta = nodeMetaMap.get(nextNodeExecution.getWorkflowNodeId());
-
-        // Check if all input nodes are completed
-        boolean ready = true;
-        for (Long inputNodeId : nextNodeMeta.getInputNodes()) {
-            WorkflowNodeExecution inputExecution = workflowNodeExecutionRepository
-                    .findByWorkflowExecutionAndWorkflowNodeId(execution, inputNodeId)
-                    .orElseThrow();
-            if (inputExecution.getStatus() != NodeStatus.COMPLETED) {
-                ready = false;
-                NodeErrorLogger.logError("Node " + nextNodeExecution.getId() + " is waiting for input node " + inputNodeId + " to complete");
-                break;
+            // If all inputs done, push next node to RabbitMQ
+            if (allInputsDone) {
+                NodeErrorLogger
+                        .logError("All inputs done for nodeId " + WorkflowNode.getNodeId() + ". Scheduling execution.");
+                Map<String, Object> payload = new HashMap<>();
+                payload.put("OriginalworkflowNodeId", WorkflowNode.getId());
+                payload.put("workflowExecutionId", completedExecution.getWorkflowExecution().getId());
+                payload.put("inputData", completedExecution.getOutputData());
+                NodeErrorLogger.logError("1238189 "+payload);
+                rabbitTemplate.convertAndSend(RabbitMqConfig.EXECUTE_QUEUE, payload);
+            } else {
+                NodeErrorLogger
+                        .logError("Not all inputs done for nodeId " + WorkflowNode.getNodeId() + ", skipping for now.");
             }
         }
-
-        // Queue node if ready and pending
-        if (ready && nextNodeExecution.getStatus() == NodeStatus.PENDING) {
-            NodeErrorLogger.logError("Queueing node " + nextNodeExecution.getId() + " for execution");
-            Map<String, Long> message = Map.of("workflowExecutionNodeId", nextNodeExecution.getId());
-            rabbitTemplate.convertAndSend(
-                    RabbitMqConfig.EXECUTE_EXCHANGE,
-                    RabbitMqConfig.EXECUTE_ROUTING_KEY,
-                    message
-            );
-
-            // If sequential, queue only one node at a time
-            if (!canParallel) break;
-        } else {
-            NodeErrorLogger.logError("Node " + nextNodeExecution.getId() + " is not ready or not pending");
-        }
     }
-}
-
 
 }

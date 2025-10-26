@@ -16,4 +16,6 @@ public interface WorkflowNodeExecutionRepository extends JpaRepository<WorkflowN
 
     Optional<WorkflowNodeExecution> findByWorkflowExecutionAndWorkflowNodeId(WorkflowExecution execution,
             Long inputNodeId);
+
+    WorkflowNodeExecution findTopByWorkflowNodeIdAndWorkflowExecutionIdOrderByIdDesc(Long nodeId, Long executionId);
 }
