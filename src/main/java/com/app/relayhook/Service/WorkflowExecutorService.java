@@ -49,7 +49,7 @@ public class WorkflowExecutorService {
         for (WorkflowNodes node : workflow.getWorkflowNodesData()) {
             if (node.getInputNodes().isEmpty()) {
                 Map<String, Object> payload = new HashMap<>();
-                payload.put("OriginalworkflowNodeId", node.getId());
+                payload.put("OriginalworkflowNodeId", node.getNodeId());
                 payload.put("workflowId", workflow.getId());
                 payload.put("workflowExecutionId", workflowExecution.getId());
                 payload.put("inputData", requestData);

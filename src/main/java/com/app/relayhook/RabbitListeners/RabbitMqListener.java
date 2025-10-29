@@ -41,11 +41,12 @@ public class RabbitMqListener {
     private String action = null;
     private String provider = null;
     private Long workflowId = null;
+    private Long workFlowNodeId = null;
 
     @RabbitListener(queues = RabbitMqConfig.EXECUTE_QUEUE)
     public void processNode(Map<String, Object> workflowNodesDetail) {
         Number workflowNodeIdNum = (Number) workflowNodesDetail.get("OriginalworkflowNodeId");
-        Long orginalWorkflowNodeId = workflowNodeIdNum.longValue();
+        this.workFlowNodeId = workflowNodeIdNum.longValue();
         Number workflowIdNum = (Number) workflowNodesDetail.get("workflowId");
         this.workflowId = workflowIdNum.longValue();
 
@@ -56,10 +57,11 @@ public class RabbitMqListener {
                 new TypeReference<Map<String, Object>>() {});
         WorkflowExecution workflowExecution = workflowExecutionRepository.findById(workflowExecutionId).orElseThrow();
         WorkflowNodes workflowNode = workflowNodeRepository
-                .findByNodeIdAndWorkflowId(orginalWorkflowNodeId, this.workflowId)
+                .findByNodeIdAndWorkflowId(this.workFlowNodeId, this.workflowId)
                 .orElseThrow(() -> new RuntimeException(
-                        "No node found for nodeId: " + orginalWorkflowNodeId +
+                        "No node found for nodeId: " + this.workFlowNodeId +
                                 " in workflowId: " + workflowExecution.getWorkflow().getId()));
+        
         WorkflowNodeExecution workflowNodeExecution = createExecutionWorkflowNode(workflowExecution, workflowNode,
                 requestData);
         workflowNodeExecution = markNodeRunning(workflowNodeExecution.getId());
@@ -75,7 +77,7 @@ public class RabbitMqListener {
                     + ", Provider: " + provider + ") with input: " + workflowNodeExecution.getInputData());
             outputData = executeNode(workflowNode, requestData);
             workflowNodeExecution.setOutputData(outputData);
-            workflowNodeExecution = markNodeCompleted(workflowNodeExecution, outputData);
+            workflowNodeExecution = markNodeCompleted(workflowNodeExecution, outputData, workflowNode);
             workflowNodeExecutionRepository.flush();
             scheduleNextNodes(workflowNode, workflowNodeExecution);
         } catch (Exception e) {
@@ -113,14 +115,15 @@ public class RabbitMqListener {
 
     @Transactional
     protected WorkflowNodeExecution markNodeCompleted(WorkflowNodeExecution nodeExecution,
-            Map<String, Object> outputData) {
+            Map<String, Object> outputData, WorkflowNodes workflowNode) {
         nodeExecution.setStatus(NodeStatus.COMPLETED);
         Map<String, Object> existingOutputData = new HashMap<>();
         existingOutputData.put("to", "khanyusuf0966@gmail.com");
-        existingOutputData.put("subject", "data from outputnode");
+        existingOutputData.put("subject", "data from outputnode for node "+this.workFlowNodeId);
         existingOutputData.put("message", "data from message");
         existingOutputData.put("rawHtml",
-                "<h2>Welcome to <b>RelayHooks</b>!</h2><p>We’re glad to have you. Start exploring your integrations today 🚀</p>");
+                "<h2>Welcome to <b>RelayHooks</b>!</h2><p>We’re glad to have you. Start exploring your integrations today 🚀"+workflowNode.getNodeData()+
+                " workflowNodeId-> "+this.workFlowNodeId+" workflowId-> "+this.workflowId+"</p>");
         nodeExecution.setOutputData(existingOutputData);
         // nodeExecution.setOutputData(outputData);
         return workflowNodeExecutionRepository.saveAndFlush(nodeExecution);
@@ -171,7 +174,6 @@ public class RabbitMqListener {
                         allInputsDone = false;
                         break;
                     }
-
                     // Fetch execution record for that input node
                     WorkflowNodeExecution exec = workflowNodeExecutionRepository
                             .findTopByWorkflowNodeIdAndWorkflowExecutionIdOrderByIdDesc(
@@ -186,6 +188,11 @@ public class RabbitMqListener {
             }
 
             if (allInputsDone) {
+                Boolean checkIfObjectEmpty = checkIfNodeDataObjectIsEmpty(WorkflowNode);
+                if(checkIfObjectEmpty){
+                    NodeErrorLogger.logError("Skipping nodeId " + WorkflowNode.getNodeId() + " as its 'object' field is empty."+", this is nodeData"+WorkflowNode.getNodeData());
+                    continue;
+                }
                 Map<String, Object> payload = new HashMap<>();
                 payload.put("OriginalworkflowNodeId", WorkflowNode.getNodeId());
                 payload.put("workflowExecutionId", completedExecution.getWorkflowExecution().getId());
@@ -197,4 +204,25 @@ public class RabbitMqListener {
             }
         }
     }
+
+    private Boolean checkIfNodeDataObjectIsEmpty(WorkflowNodes workflowNode) {
+        Map<String, Object> nodeDataMap = objectMapper.convertValue(workflowNode.getNodeData(),
+                new TypeReference<Map<String, Object>>() {
+                });
+        if (nodeDataMap.containsKey("object")) {
+            Map<String, Object> objectMap = objectMapper.convertValue(nodeDataMap.get("object"),
+                    new TypeReference<Map<String, Object>>() {
+                    });
+            if(objectMap == null || objectMap.isEmpty()){
+                return true;
+            }
+            String apiUrlInObject = objectMap.getOrDefault("apiUrl", "").toString();
+            return apiUrlInObject.isEmpty();
+        }
+        return false;
+    }
 }
+
+/*
+ * here inside never use database node id , always use combination of workflowId and workflowNodeId 
+ */
