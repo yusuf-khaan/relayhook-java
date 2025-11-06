@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.app.relayhook.Logs.NodeErrorLogger;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -88,6 +89,7 @@ public class RelayhookClient implements RelayhookAbs {
     }
 
     public JsonNode getProvidersMetaData(List<String> providersList) {
+        NodeErrorLogger.logError(providersList);
         return sendRequest("POST", "/api/integration/get-provider-metadata", Map.of("provider", providersList), false);
     }
 

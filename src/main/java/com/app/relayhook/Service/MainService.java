@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.app.relayhook.DTO.WorkflowDTO;
 import com.app.relayhook.DTO.WorkflowNodesDTO;
 import com.app.relayhook.Integrations.Relayhook.RelayhookAbs;
+import com.app.relayhook.Logs.NodeErrorLogger;
 import com.app.relayhook.Models.SystemIntegrations;
 import com.app.relayhook.Models.Workflow;
 import com.app.relayhook.Models.WorkflowNodes;
@@ -157,6 +158,7 @@ public class MainService {
                 .collect(Collectors.toList());
         JsonNode providerListJson = objectMapper.valueToTree(providerPage);
         JsonNode providersMetaDataArray = relayhookAbs.getProvidersMetaData(providerNames);
+        NodeErrorLogger.logError(providersMetaDataArray);
         Map<String, JsonNode> metadataMap = new HashMap<>();
         if (providersMetaDataArray != null && providersMetaDataArray.isArray()) {
             for (JsonNode node : providersMetaDataArray) {

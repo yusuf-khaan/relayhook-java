@@ -73,9 +73,11 @@ public class RabbitMqListener {
         this.provider = object.get("name").toString();
 
         try {
-            NodeErrorLogger.logError("OriginalNode id is "+workflowNode.getNodeId()+ " from workflow "+this.workflowId+" Executing nodeExecution ID " + workflowNodeExecution.getId() + " (Action: " + action
-                    + ", Provider: " + provider + ") with input: " + workflowNodeExecution.getInputData());
+            // NodeErrorLogger.logError("OriginalNode id is "+workflowNode.getNodeId()+ " from workflow "+this.workflowId+" Executing nodeExecution ID " + workflowNodeExecution.getId() + " (Action: " + action
+            //         + ", Provider: " + provider + ") with input: " + workflowNodeExecution.getInputData());
+            NodeErrorLogger.logError("this is request data 78 "+requestData);
             outputData = executeNode(workflowNode, requestData);
+            NodeErrorLogger.logError("outputData 79 is "+outputData);
             workflowNodeExecution.setOutputData(outputData);
             workflowNodeExecution = markNodeCompleted(workflowNodeExecution, outputData, workflowNode);
             workflowNodeExecutionRepository.flush();
@@ -117,15 +119,15 @@ public class RabbitMqListener {
     protected WorkflowNodeExecution markNodeCompleted(WorkflowNodeExecution nodeExecution,
             Map<String, Object> outputData, WorkflowNodes workflowNode) {
         nodeExecution.setStatus(NodeStatus.COMPLETED);
-        Map<String, Object> existingOutputData = new HashMap<>();
-        existingOutputData.put("to", "khanyusuf0966@gmail.com");
-        existingOutputData.put("subject", "data from outputnode for node "+this.workFlowNodeId);
-        existingOutputData.put("message", "data from message");
-        existingOutputData.put("rawHtml",
-                "<h2>Welcome to <b>RelayHooks</b>!</h2><p>We’re glad to have you. Start exploring your integrations today 🚀"+workflowNode.getNodeData()+
-                " workflowNodeId-> "+this.workFlowNodeId+" workflowId-> "+this.workflowId+"</p>");
-        nodeExecution.setOutputData(existingOutputData);
-        // nodeExecution.setOutputData(outputData);
+        // Map<String, Object> existingOutputData = new HashMap<>();
+        // existingOutputData.put("to", "khanyusuf0966@gmail.com");
+        // existingOutputData.put("subject", "data from outputnode for node "+this.workFlowNodeId);
+        // existingOutputData.put("message", "data from message");
+        // existingOutputData.put("rawHtml",
+        //         "<h2>Welcome to <b>RelayHooks</b>!</h2><p>We’re glad to have you. Start exploring your integrations today 🚀"+workflowNode.getNodeData()+
+        //         " workflowNodeId-> "+this.workFlowNodeId+" workflowId-> "+this.workflowId+"</p>");
+        // nodeExecution.setOutputData(existingOutputData);
+        nodeExecution.setOutputData(outputData);
         return workflowNodeExecutionRepository.saveAndFlush(nodeExecution);
     }
 
