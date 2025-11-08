@@ -16,31 +16,23 @@ import com.app.relayhook.Models.Users;
 import com.app.relayhook.Service.MainService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Slf4j
-@RequestMapping("/api/v1")
+@RequestMapping("/auth")
 @RestController
 @CrossOrigin(origins = { "http://localhost:4200" }, allowCredentials = "true")
 @RequiredArgsConstructor
-public class MainController {
+public class UserController {
 
     private final MainService mainService;
 
-    @PostMapping("/save-workflow")
-    public Object saveWorkflow(HttpServletRequest request, @RequestBody WorkflowDTO workflowDTO) {
-        // return workflowDTO;
-        // log.info("save workflow init");
-        return mainService.saveWorkflow(workflowDTO);
-    }
-
-    @GetMapping("get-active-integrations")
-    public Object getAllIntegrations(
-            @RequestParam(required = false) String search,
-            @PageableDefault(size = 10) Pageable pageable) {
-        return mainService.getAllIntegrations(pageable, search);
-    }
+    @PostMapping("/create-user")
+    public Users createUser(HttpServletRequest request, HttpServletResponse response,  @RequestBody Users userDTO) {
+        return mainService.createUser(userDTO, response, request);
+    } 
 }

@@ -9,6 +9,8 @@ import java.util.stream.StreamSupport;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,15 +19,23 @@ import com.app.relayhook.DTO.WorkflowNodesDTO;
 import com.app.relayhook.Integrations.Relayhook.RelayhookAbs;
 import com.app.relayhook.Logs.NodeErrorLogger;
 import com.app.relayhook.Models.SystemIntegrations;
+import com.app.relayhook.Models.Users;
 import com.app.relayhook.Models.Workflow;
 import com.app.relayhook.Models.WorkflowNodes;
 import com.app.relayhook.Repository.SystemIntegrationsRepository;
+import com.app.relayhook.Repository.UsersRepository;
 import com.app.relayhook.Repository.WorkflowRepository;
+import com.app.relayhook.SecurityConfig.JwtUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +49,9 @@ public class MainService {
     private final SystemIntegrationsRepository systemIntegrationsRepository;
     private final RelayhookAbs relayhookAbs;
     private final ObjectMapper objectMapper;
+    private final UsersRepository usersRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
     @Transactional
     public Workflow saveWorkflow(WorkflowDTO dto) {
@@ -47,7 +60,8 @@ public class MainService {
         Workflow workflow = new Workflow();
         workflow.setName(dto.getName());
         workflow.setDescription(dto.getDescription());
-        workflow.setWorkflowData(objectMapper.convertValue(dto, new TypeReference<Map<String,Object>>() {}));
+        workflow.setWorkflowData(objectMapper.convertValue(dto, new TypeReference<Map<String, Object>>() {
+        }));
         workflow.setTrigger(dto.getTrigger());
         workflow.setSettings(dto.getSettings());
         workflow.setCanExecuteParallel(dto.getCanExecuteParallel());
@@ -66,7 +80,9 @@ public class MainService {
                         node.setNodeId(nodeDTO.getNodeId());
                         node.setInputNodes(nodeDTO.getInputSources());
                         node.setOutputNodes(nodeDTO.getOutputSources());
-                        node.setNodeData(objectMapper.convertValue(nodeDTO.getNodeData(), new TypeReference<Map<String,Object>>(){}));
+                        node.setNodeData(objectMapper.convertValue(nodeDTO.getNodeData(),
+                                new TypeReference<Map<String, Object>>() {
+                                }));
                         node.setNodeType(levelDTO.getNodeType());
                         node.setWorkflow(workflow);
                         node.setCanExecuteParallel(levelDTO.getCanExecuteParallel());
@@ -187,4 +203,17 @@ public class MainService {
         return providerListJson;
     }
 
+    public Users createUser(Users userDTO, HttpServletResponse response, HttpServletRequest request) {
+        userDTO.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        String jwtToken = jwtUtil.generateToken(userDTO.getUsername());
+        ResponseCookie cookie = ResponseCookie.from("jwt", jwtToken)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("None")
+                .path("/")
+                .maxAge(7 * 24 * 60 * 60)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        return usersRepository.save(userDTO);
+    }
 }
