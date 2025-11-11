@@ -14,6 +14,7 @@ import com.app.relayhook.DTO.WorkflowDTO;
 import com.app.relayhook.Models.SystemIntegrations;
 import com.app.relayhook.Models.Users;
 import com.app.relayhook.Service.MainService;
+import com.app.relayhook.Service.UserService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -30,9 +31,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class UserController {
 
     private final MainService mainService;
+    private final UserService userService;
 
     @PostMapping("/create-user")
     public Users createUser(HttpServletRequest request, HttpServletResponse response,  @RequestBody Users userDTO) {
-        return mainService.createUser(userDTO, response, request);
-    } 
+        return userService.createUser(userDTO, response, request);
+    }
+    
+    @PostMapping("/login")
+    public Map<String,String> loginUser(HttpServletRequest request, HttpServletResponse response,@RequestBody Map<String, String> loginDTO) {
+        return userService.loginUser(loginDTO, response, request);
+    }
 }

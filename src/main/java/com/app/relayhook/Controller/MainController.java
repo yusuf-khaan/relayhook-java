@@ -11,8 +11,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.app.relayhook.DTO.WorkflowDTO;
+import com.app.relayhook.DTO.WorkflowResponseDTO;
 import com.app.relayhook.Models.SystemIntegrations;
 import com.app.relayhook.Models.Users;
+import com.app.relayhook.Models.WorkflowRequests;
 import com.app.relayhook.Service.MainService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,9 +34,13 @@ public class MainController {
 
     @PostMapping("/save-workflow")
     public Object saveWorkflow(HttpServletRequest request, @RequestBody WorkflowDTO workflowDTO) {
-        // return workflowDTO;
-        // log.info("save workflow init");
-        return mainService.saveWorkflow(workflowDTO);
+        return mainService.saveWorkflow(request, workflowDTO);
+    }
+
+    @GetMapping("/get-user-workflows")
+    public Page<WorkflowResponseDTO> getUserWorkflows(HttpServletRequest request, @RequestParam(required = false) String search,
+            @PageableDefault(size = 10) Pageable pageable) {
+        return mainService.getUserWorkflows(request, search, pageable);
     }
 
     @GetMapping("get-active-integrations")
@@ -42,5 +48,17 @@ public class MainController {
             @RequestParam(required = false) String search,
             @PageableDefault(size = 10) Pageable pageable) {
         return mainService.getAllIntegrations(pageable, search);
+    }
+
+    @PostMapping("/save-workflow-request")
+    public WorkflowRequests saveWorkflowRequests(HttpServletRequest request, @RequestBody Map<String, String> map) {
+        Long userId = (Long) request.getAttribute("userId");
+        return mainService.saveWorkflowRequest(map, userId);
+    }
+
+    @GetMapping("/get-workflow-requests")
+    public Page<WorkflowRequests> getWorkflowRequest(HttpServletRequest request, @RequestParam(required = false) String search,
+            @PageableDefault(size = 10) Pageable pageable){
+                return mainService.getWorkflowRequest(request, search, pageable);
     }
 }

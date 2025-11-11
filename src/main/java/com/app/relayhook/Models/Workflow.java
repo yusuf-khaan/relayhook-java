@@ -38,6 +38,11 @@ public class Workflow {
     private String name;
 
     private String description;
+    private String avatar;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<String> tags;
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
@@ -45,7 +50,7 @@ public class Workflow {
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    private Map<String,Object> trigger;
+    private List<String> trigger;
 
      @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")

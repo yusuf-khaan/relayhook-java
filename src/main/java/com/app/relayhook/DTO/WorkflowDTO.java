@@ -25,7 +25,7 @@ public class WorkflowDTO {
 
     private Map<String, Object> workflowData;
 
-    private Map<String, Object> trigger;
+    private List<String> trigger;
 
     private Map<String, Object> settings;
 

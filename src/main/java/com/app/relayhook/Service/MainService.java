@@ -1,5 +1,6 @@
 package com.app.relayhook.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -10,21 +11,27 @@ import java.util.stream.StreamSupport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.app.relayhook.DTO.WorkflowDTO;
 import com.app.relayhook.DTO.WorkflowNodesDTO;
+import com.app.relayhook.DTO.WorkflowResponseDTO;
 import com.app.relayhook.Integrations.Relayhook.RelayhookAbs;
 import com.app.relayhook.Logs.NodeErrorLogger;
 import com.app.relayhook.Models.SystemIntegrations;
 import com.app.relayhook.Models.Users;
 import com.app.relayhook.Models.Workflow;
 import com.app.relayhook.Models.WorkflowNodes;
+import com.app.relayhook.Models.WorkflowRequests;
 import com.app.relayhook.Repository.SystemIntegrationsRepository;
 import com.app.relayhook.Repository.UsersRepository;
 import com.app.relayhook.Repository.WorkflowRepository;
+import com.app.relayhook.Repository.WorkflowRequestsRepository;
 import com.app.relayhook.SecurityConfig.JwtUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -52,13 +59,16 @@ public class MainService {
     private final UsersRepository usersRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final WorkflowRequestsRepository workflowRequestsRepository;
 
     @Transactional
-    public Workflow saveWorkflow(WorkflowDTO dto) {
+    public Workflow saveWorkflow(HttpServletRequest request, WorkflowDTO dto) {
         validateWorkflow(dto);
-
+        Users users = usersRepository.findById((Long) request.getAttribute("userId"))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "UNAUTHORIZED"));
         Workflow workflow = new Workflow();
         workflow.setName(dto.getName());
+        workflow.setUser(users);
         workflow.setDescription(dto.getDescription());
         workflow.setWorkflowData(objectMapper.convertValue(dto, new TypeReference<Map<String, Object>>() {
         }));
@@ -215,5 +225,60 @@ public class MainService {
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         return usersRepository.save(userDTO);
+    }
+
+    public WorkflowRequests saveWorkflowRequest(Map<String, String> map, Long userId) {
+        WorkflowRequests workflowRequests = new WorkflowRequests();
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "UNAUTHORIZED"));
+        workflowRequests.setEmailToContact(map.getOrDefault("email", ""));
+        workflowRequests.setDescription(map.getOrDefault("description", ""));
+        workflowRequests.setName(map.getOrDefault("name", ""));
+        Object value = map.get("scheduledTime");
+        if (value instanceof String str && !str.isBlank()) {
+            workflowRequests.setScheduledTimeToContact(LocalDateTime.parse(str));
+        } else {
+            workflowRequests.setScheduledTimeToContact(null);
+        }
+        workflowRequests.setUser(user);
+        return workflowRequestsRepository.save(workflowRequests);
+    }
+
+    public Page<WorkflowRequests> getWorkflowRequest(HttpServletRequest request, String search,
+            Pageable pageable) {
+        Long userId = (Long) request.getAttribute("userId");
+        Page<WorkflowRequests> workflowRequestsPage;
+        if (search == null || search.isBlank()) {
+            workflowRequestsPage = workflowRequestsRepository.findByUserId(userId, pageable);
+        } else {
+            workflowRequestsPage = workflowRequestsRepository.findByUserIdAndNameContainingIgnoreCase(userId, search,
+                    pageable);
+        }
+        return workflowRequestsPage;
+    }
+
+    public Page<WorkflowResponseDTO> getUserWorkflows(HttpServletRequest request, String search, Pageable pageable) {
+        Long userId = (Long) request.getAttribute("userId");
+        Page<WorkflowResponseDTO> workflowPage;
+        Page<Workflow> workflow;
+        if (search == null || search.isBlank()) {
+            workflow = workflowRepository.findByUserId(userId, pageable);
+        } else {
+            workflow = workflowRepository.findByUserIdAndNameContainingIgnoreCase(userId, search, pageable);
+        }
+        workflowPage = workflow.map(wf -> new WorkflowResponseDTO(
+                wf.getId(),
+                wf.getName(),
+                wf.getDescription(),
+                wf.getTrigger(),
+                wf.getCanExecuteParallel(),
+                wf.getIsActive(),
+               List.of("Developement"),
+                wf.getExecutionCount(),
+                "https://i.pravatar.cc/40?img=7",
+                wf.getWebhookUrl(),
+                "bg-indigo-100 text-indigo-700"
+        ));
+        return workflowPage;
     }
 }

@@ -48,6 +48,10 @@ public class Users implements UserDetails {
     @JsonIgnore
     private List<Workflow> workflow;
 
+    @OneToMany(mappedBy = "user")
+    @JsonIgnore
+    private List<WorkflowRequests> workflowRequests;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;

@@ -64,18 +64,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // Exclude paths that should not trigger JWT authentication
         boolean skip = path.startsWith("/auth/") ||
-                path.startsWith("/oauth2") ||
-                path.startsWith("/login") ||
-                path.startsWith("/go") ||
-                path.startsWith("/actuator/health") ||
-                // path.startsWith("/api/saveAndCheckSlug") ||
-                path.startsWith("/error") ||
-                path.startsWith("/api/form/") ||
-                path.startsWith("/api/saveResponse/") ||
-                path.startsWith("/api/public/") || // these are for public path free from original cookie auth flow
-                path.startsWith("/webhooks/") ||
-                path.startsWith("/api/caser/");
-
+                path.startsWith("/actuator/health");
         log.info("shouldNotFilter = {}", skip);
         return skip;
     }
@@ -94,8 +83,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 // Set authentication in the security context
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                Long surgeId = ((Users) userDetails).getId();
-                request.setAttribute("surgeId", surgeId);
+                Long userId = ((Users) userDetails).getId();
+                request.setAttribute("userId", userId);
             }
         }
     }

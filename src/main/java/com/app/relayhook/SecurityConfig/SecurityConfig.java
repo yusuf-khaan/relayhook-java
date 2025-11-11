@@ -1,4 +1,5 @@
 package com.app.relayhook.SecurityConfig;
+
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,20 +44,20 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // .cors(cors -> cors.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable()) // Disable CSRF for testing (Enable it in production)
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/auth/**", "/api/**").permitAll() // Allow preflight
-                                                                                                // requests
-                        .requestMatchers("/go/**", "/oauth2/**", "/login/**", "/api/form/**", "/api/saveResponse/**","/api/public/**",
-                        "/webhooks/**",
-                                "/api/caser/**")
-                        .permitAll()
-                        .requestMatchers("/auth/**", "/V2/**","/webhooks/**", "/actuator/health").permitAll() // Allow public access
-                        .anyRequest().authenticated() // Secure other endpoints
-                )
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow all preflight
+                        .requestMatchers("/auth/**", "/actuator/health").permitAll()
+                        .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
+                .logout(logout -> logout.disable())
+                .exceptionHandling(ex -> ex.authenticationEntryPoint((req, res, e) -> {
+                    res.setStatus(401);
+                    res.getWriter().write("Unauthorized");
+                }))
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
