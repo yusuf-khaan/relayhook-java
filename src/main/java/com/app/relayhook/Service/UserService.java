@@ -59,6 +59,8 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final WorkflowRequestsRepository workflowRequestsRepository;
+    private static final long EXPIRATION_MILLIS = 1000L * 60 * 60 * 24 * 7; // 7 days
+
 
     public Users createUser(Users userDTO, HttpServletResponse response, HttpServletRequest request) {
         userDTO.setPassword(passwordEncoder.encode(userDTO.getPassword()));
@@ -82,12 +84,13 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
         }
         String jwtToken = jwtUtil.generateToken(userDTO.get("email"));
+        log.info("Generated JWT Token: {}", jwtToken);
         ResponseCookie cookie = ResponseCookie.from("jwt", jwtToken)
                 .httpOnly(true)
                 .secure(true)
                 .sameSite("None")
                 .path("/")
-                .maxAge(7 * 24 * 60 * 60)
+                .maxAge(EXPIRATION_MILLIS / 1000) // Convert milliseconds to seconds
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         return Map.of("message", "Login successful",

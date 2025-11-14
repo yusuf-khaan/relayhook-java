@@ -25,6 +25,7 @@ public class JwtUtil {
 
     private final SecretKey secretKey;
     private final SecretKey secretKeyTwo;
+    private static final long EXPIRATION_MILLIS = 1000L * 60 * 60 * 24 * 7; // 7 days
 
     public JwtUtil(@Value("${spring.jwt.secret}") String secret, @Value("${spring.jwt.secret.two}") String secretTwo) {
         if (secret == null || secret.length() < 32) {
@@ -43,8 +44,7 @@ public class JwtUtil {
         return Jwts.builder()
                 .subject(email)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
-                // .expiration(new Date(System.currentTimeMillis() + 1000))
+                .expiration(new Date(System.currentTimeMillis() + EXPIRATION_MILLIS))
                 .signWith(secretKey)
                 .compact();
     }

@@ -1,17 +1,15 @@
 package com.app.relayhook.DTO;
 
-import java.time.LocalDate;
 import java.util.List;
+import java.time.LocalDate;
 
-public record WorkflowResponseDTO(
+public record WorkflowRequestsDTO(
     Long id,
     String name,
     String description,
     List<String> trigger,
-    Boolean canExecuteParallel,
-    Boolean isActive,
     List<String> tags,
-    Integer executionCount,
-    String Webhookurl,
+    String status,
+    Integer progress,
     LocalDate updatedAt
 ) {}

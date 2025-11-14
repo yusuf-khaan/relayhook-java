@@ -1,2 +1,8 @@
 [2025-11-08T23:04:14.727537569] Message: "this is request data 78 {text=Generate a professional and visually appealing email template for 'Happy Summer Vacation'. Return the result as a valid JSON object with the following keys only: 'to', 'subject', and 'rawHtml'. The 'to' key should contain a sample email (e.g., 'recipient@example.com'), the 'subject' should be a catchy email subject line, and 'rawHtml' should contain the complete responsive HTML template. Do not include markdown, code fences, or explanations — only return pure JSON output., model=gpt-4o-mini}" | Error: No exception
 [2025-11-08T23:04:15.454200991] Message: "NodeExecution ID 15128 failed for Node ID 30. Exception: Unexpected error: 500 Internal Server Error on POST request for \"http://172.25.192.1:5000/api/integration/action/gmail/sendEmail\": \"{\"error\":\"\\\"undefined\\\" is not valid JSON\"}\"" | Error: java.lang.RuntimeException: Unexpected error: 500 Internal Server Error on POST request for "http://172.25.192.1:5000/api/integration/action/gmail/sendEmail": "{"error":"\"undefined\" is not valid JSON"}"
+[2025-11-14T20:48:32.718977831] Message: [] | Error: No exception
+[2025-11-14T20:49:28.631139232] Message: [] | Error: No exception
+[2025-11-14T20:49:35.183330905] Message: [] | Error: No exception
+[2025-11-14T20:51:16.027642987] Message: [] | Error: No exception
+[2025-11-14T20:53:44.392644335] Message: [] | Error: No exception
+[2025-11-14T20:54:17.892758962] Message: [] | Error: No exception

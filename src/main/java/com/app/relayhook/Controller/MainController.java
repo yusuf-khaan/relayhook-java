@@ -10,7 +10,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.app.relayhook.DTO.IntegrationsDTO;
 import com.app.relayhook.DTO.WorkflowDTO;
+import com.app.relayhook.DTO.WorkflowRequestsDTO;
 import com.app.relayhook.DTO.WorkflowResponseDTO;
 import com.app.relayhook.Models.SystemIntegrations;
 import com.app.relayhook.Models.Users;
@@ -43,11 +46,18 @@ public class MainController {
         return mainService.getUserWorkflows(request, search, pageable);
     }
 
-    @GetMapping("get-active-integrations")
+    @GetMapping("/get-active-integrations")
     public Object getAllIntegrations(
             @RequestParam(required = false) String search,
             @PageableDefault(size = 10) Pageable pageable) {
         return mainService.getAllIntegrations(pageable, search);
+    }
+
+    @GetMapping("/get-integrations")
+    public Page<IntegrationsDTO> getIntegrations(
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 10) Pageable pageable) {
+        return mainService.getIntegrations(pageable, search);
     }
 
     @PostMapping("/save-workflow-request")
@@ -57,7 +67,7 @@ public class MainController {
     }
 
     @GetMapping("/get-workflow-requests")
-    public Page<WorkflowRequests> getWorkflowRequest(HttpServletRequest request, @RequestParam(required = false) String search,
+    public Page<WorkflowRequestsDTO> getWorkflowRequest(HttpServletRequest request, @RequestParam(required = false) String search,
             @PageableDefault(size = 10) Pageable pageable){
                 return mainService.getWorkflowRequest(request, search, pageable);
     }

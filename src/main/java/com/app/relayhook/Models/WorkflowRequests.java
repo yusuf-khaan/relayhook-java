@@ -7,6 +7,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.vladmihalcea.hibernate.type.json.JsonType;
 
 import io.micrometer.common.lang.Nullable;
 import jakarta.persistence.Column;
@@ -33,11 +35,23 @@ public class WorkflowRequests {
 
     private String name;
 
+    private String status = "Pending";
+
     private String description;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    List<String> tags;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    List<String> trigger;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnore
     private Users user;
+
+    private Integer progress = 0;
 
     private String emailToContact;
 

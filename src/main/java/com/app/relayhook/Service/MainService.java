@@ -2,10 +2,12 @@ package com.app.relayhook.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import org.springframework.data.domain.Page;
@@ -18,8 +20,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.app.relayhook.DTO.IntegrationsDTO;
 import com.app.relayhook.DTO.WorkflowDTO;
 import com.app.relayhook.DTO.WorkflowNodesDTO;
+import com.app.relayhook.DTO.WorkflowRequestsDTO;
 import com.app.relayhook.DTO.WorkflowResponseDTO;
 import com.app.relayhook.Integrations.Relayhook.RelayhookAbs;
 import com.app.relayhook.Logs.NodeErrorLogger;
@@ -244,7 +248,7 @@ public class MainService {
         return workflowRequestsRepository.save(workflowRequests);
     }
 
-    public Page<WorkflowRequests> getWorkflowRequest(HttpServletRequest request, String search,
+    public Page<WorkflowRequestsDTO> getWorkflowRequest(HttpServletRequest request, String search,
             Pageable pageable) {
         Long userId = (Long) request.getAttribute("userId");
         Page<WorkflowRequests> workflowRequestsPage;
@@ -254,7 +258,17 @@ public class MainService {
             workflowRequestsPage = workflowRequestsRepository.findByUserIdAndNameContainingIgnoreCase(userId, search,
                     pageable);
         }
-        return workflowRequestsPage;
+        return workflowRequestsPage.map(req -> new WorkflowRequestsDTO(
+                req.getId(),
+                req.getName(),
+                req.getDescription(),
+                List.of("Manual"),
+                // req.getTags(),
+                // req.getTrigger(),
+                List.of("User Request"),
+                req.getStatus(),
+                req.getProgress(),
+                req.getUpdatedAt().toLocalDate()));
     }
 
     public Page<WorkflowResponseDTO> getUserWorkflows(HttpServletRequest request, String search, Pageable pageable) {
@@ -270,15 +284,33 @@ public class MainService {
                 wf.getId(),
                 wf.getName(),
                 wf.getDescription(),
-                wf.getTrigger(),
+                Stream.concat(wf.getTrigger().stream(), Stream.of("Webhook")).toList(),
                 wf.getCanExecuteParallel(),
                 wf.getIsActive(),
-               List.of("Developement"),
+                List.of("Development"),
                 wf.getExecutionCount(),
-                "https://i.pravatar.cc/40?img=7",
                 wf.getWebhookUrl(),
-                "bg-indigo-100 text-indigo-700"
-        ));
+                wf.getUpdatedAt().toLocalDate()));
         return workflowPage;
     }
+
+    public Page<IntegrationsDTO> getIntegrations(Pageable pageable, String search) {
+        Page<SystemIntegrations> integrationsPage;
+        if (search == null || search.isBlank()) {
+            integrationsPage = systemIntegrationsRepository.findAll(pageable);
+        } else {
+            integrationsPage = systemIntegrationsRepository
+                    .findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+                            search, search, pageable);
+        }
+        return integrationsPage.map(integration -> new IntegrationsDTO(
+                integration.getId(),
+                integration.getName(),
+                integration.getDescription(),
+                integration.getCallbackUrl(),
+                integration.getImage(),
+                integration.getCategory(),
+                integration.getAuthPayload()));
+    }
+
 }

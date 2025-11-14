@@ -2,11 +2,14 @@ package com.app.relayhook.Models;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.vladmihalcea.hibernate.type.json.JsonType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -32,6 +35,12 @@ public class SystemIntegrations {
 
     private Boolean active;
 
+    private String Image;
+    
+     @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<String> category;
+
     private String description;
 
     private String authType;
@@ -43,6 +52,10 @@ public class SystemIntegrations {
     private String provider;
 
     private String callbackUrl;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private Map<String,String> authPayload;
 
     @OneToMany(mappedBy = "systemIntegrations")
     @JsonIgnore

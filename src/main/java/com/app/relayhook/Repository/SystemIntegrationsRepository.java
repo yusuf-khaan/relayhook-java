@@ -13,5 +13,4 @@ public interface SystemIntegrationsRepository extends JpaRepository<SystemIntegr
     Page<SystemIntegrations> findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
     String name, String description, Pageable pageable
 );
-
 }
