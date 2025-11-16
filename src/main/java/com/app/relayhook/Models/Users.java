@@ -1,6 +1,7 @@
 package com.app.relayhook.Models;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -36,9 +37,11 @@ public class Users implements UserDetails {
     @Column(unique = true, nullable = false)
     private String email;
 
+    private String avatar;
+
     private String password;
 
-    private List<String> roles;
+    private List<String> roles = new ArrayList<>();
 
     @OneToMany(mappedBy = "user")
     @JsonIgnore
@@ -51,6 +54,10 @@ public class Users implements UserDetails {
     @OneToMany(mappedBy = "user")
     @JsonIgnore
     private List<WorkflowRequests> workflowRequests;
+
+    @OneToMany(mappedBy = "user")
+    @JsonIgnore
+    private List<ScheduleChanges> scheduledChanges;
 
     @CreationTimestamp
     @Column(updatable = false)

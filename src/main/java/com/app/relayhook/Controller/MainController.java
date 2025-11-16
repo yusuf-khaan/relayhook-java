@@ -15,15 +15,19 @@ import com.app.relayhook.DTO.IntegrationsDTO;
 import com.app.relayhook.DTO.WorkflowDTO;
 import com.app.relayhook.DTO.WorkflowRequestsDTO;
 import com.app.relayhook.DTO.WorkflowResponseDTO;
+import com.app.relayhook.Models.ScheduleChanges;
 import com.app.relayhook.Models.SystemIntegrations;
+import com.app.relayhook.Models.UserIntegrationsCredentials;
 import com.app.relayhook.Models.Users;
 import com.app.relayhook.Models.WorkflowRequests;
 import com.app.relayhook.Service.MainService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Slf4j
@@ -70,5 +74,42 @@ public class MainController {
     public Page<WorkflowRequestsDTO> getWorkflowRequest(HttpServletRequest request, @RequestParam(required = false) String search,
             @PageableDefault(size = 10) Pageable pageable){
                 return mainService.getWorkflowRequest(request, search, pageable);
+    }
+
+    @GetMapping("/get-scheduled-changes")
+    public Page<ScheduleChanges> getScheduledChanges(HttpServletRequest request, @RequestParam(required = false) String search,
+    @RequestParam(required = true) Long id,
+            @PageableDefault(size = 10) Pageable pageable){
+                return mainService.getScheduledChanges(pageable, search, (Long) request.getAttribute("userId"), id);
+    }
+
+     @PostMapping("/save-scheduled-changes-request")
+    public ScheduleChanges saveScheduledChangesRequest(HttpServletRequest request, @RequestBody Map<String, Object> map) {
+        Long userId = (Long) request.getAttribute("userId");
+        return mainService.saveScheduleChanges(map, userId);
+    }
+
+    @PostMapping("/save-user-integration")
+    public UserIntegrationsCredentials saveUserIntegration(HttpServletRequest request, @RequestBody Map<String, Object> map) {
+        Long userId = (Long) request.getAttribute("userId");
+        return mainService.saveUserIntegration(map, userId);
+    }
+
+    @PostMapping("/update-user-details")
+    public Map<String,String> updateUserDetails(HttpServletRequest request, @RequestBody Map<String, String> map) {
+        Long userId = (Long) request.getAttribute("userId");
+        return mainService.updateUserDetails(map, userId);
+    }
+
+    @GetMapping("/send-new-password")
+    public Map<String,String> SendNewPassword(HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        return mainService.sendNewPassword(userId);
+    }
+
+    @GetMapping("/me")
+    public Map<String,Object> me(HttpServletRequest request, HttpServletResponse response) {
+        Long userId = (Long) request.getAttribute("userId");
+        return mainService.me(userId);
     }
 }

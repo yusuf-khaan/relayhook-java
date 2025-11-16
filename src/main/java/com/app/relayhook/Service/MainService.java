@@ -1,15 +1,18 @@
 package com.app.relayhook.Service;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import org.springframework.boot.autoconfigure.security.SecurityProperties.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
@@ -27,12 +30,16 @@ import com.app.relayhook.DTO.WorkflowRequestsDTO;
 import com.app.relayhook.DTO.WorkflowResponseDTO;
 import com.app.relayhook.Integrations.Relayhook.RelayhookAbs;
 import com.app.relayhook.Logs.NodeErrorLogger;
+import com.app.relayhook.Models.ScheduleChanges;
 import com.app.relayhook.Models.SystemIntegrations;
+import com.app.relayhook.Models.UserIntegrationsCredentials;
 import com.app.relayhook.Models.Users;
 import com.app.relayhook.Models.Workflow;
 import com.app.relayhook.Models.WorkflowNodes;
 import com.app.relayhook.Models.WorkflowRequests;
+import com.app.relayhook.Repository.ScheduledChangesRepository;
 import com.app.relayhook.Repository.SystemIntegrationsRepository;
+import com.app.relayhook.Repository.UserIntegrationsCredentialsRepository;
 import com.app.relayhook.Repository.UsersRepository;
 import com.app.relayhook.Repository.WorkflowRepository;
 import com.app.relayhook.Repository.WorkflowRequestsRepository;
@@ -64,6 +71,8 @@ public class MainService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final WorkflowRequestsRepository workflowRequestsRepository;
+    private final ScheduledChangesRepository scheduledChangesRepository;
+    private final UserIntegrationsCredentialsRepository userIntegrationsCredentialsRepository;
 
     @Transactional
     public Workflow saveWorkflow(HttpServletRequest request, WorkflowDTO dto) {
@@ -295,15 +304,15 @@ public class MainService {
     }
 
     public Page<IntegrationsDTO> getIntegrations(Pageable pageable, String search) {
-        Page<SystemIntegrations> integrationsPage;
+        Page<SystemIntegrations> systemIntegrations;
         if (search == null || search.isBlank()) {
-            integrationsPage = systemIntegrationsRepository.findAll(pageable);
+            systemIntegrations = systemIntegrationsRepository.findAll(pageable);
         } else {
-            integrationsPage = systemIntegrationsRepository
+            systemIntegrations = systemIntegrationsRepository
                     .findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
                             search, search, pageable);
         }
-        return integrationsPage.map(integration -> new IntegrationsDTO(
+        return systemIntegrations.map(integration -> new IntegrationsDTO(
                 integration.getId(),
                 integration.getName(),
                 integration.getDescription(),
@@ -313,4 +322,130 @@ public class MainService {
                 integration.getAuthPayload()));
     }
 
+    public Page<ScheduleChanges> getScheduledChanges(Pageable pageable, String search, Long userId,
+            Long workflowRequestId) {
+        Page<ScheduleChanges> scheduleChanges;
+        if (search == null || search.isBlank()) {
+            scheduleChanges = scheduledChangesRepository.findAllByWorkflowRequestId(workflowRequestId, pageable);
+        } else {
+            scheduleChanges = scheduledChangesRepository
+                    .search(
+                            userId, search, pageable);
+        }
+        return scheduleChanges;
+    }
+
+    public ScheduleChanges saveScheduleChanges(Map<String, Object> scheduleMap, Long userId) {
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "UNAUTHORIZED"));
+        ScheduleChanges sc = objectMapper.convertValue(scheduleMap, ScheduleChanges.class);
+        sc.setUser(user);
+        return scheduledChangesRepository.save(sc);
+    }
+
+    // public UserIntegrationsCredentials saveUserIntegration(Map<String, Object>
+    // integrationDetail, Long userId) {
+    // Long integrationId = ((Number)
+    // integrationDetail.get("integrationId")).longValue();
+    // Optional<UserIntegrationsCredentials> existingOpt =
+    // userIntegrationsCredentialsRepository
+    // .findBySystemIntegrations_IdAndUser_Id(integrationId, userId);
+    // UserIntegrationsCredentials credentials;
+    // if (existingOpt.isPresent()) {
+    // credentials = existingOpt.get();
+    // objectMapper.updateValue(credentials, integrationDetail);
+    // } else {
+    // credentials = objectMapper.convertValue(integrationDetail,
+    // UserIntegrationsCredentials.class);
+    // Users user = usersRepository.findById(userId)
+    // .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "User
+    // not found"));
+    // SystemIntegrations systemIntegration =
+    // systemIntegrationsRepository.findById(integrationId)
+    // .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+    // "Integration not found"));
+    // credentials.setUser(user);
+    // credentials.setSystemIntegrations(systemIntegration);
+    // }
+    // return userIntegrationsCredentialsRepository.save(credentials);
+    // }
+
+    public UserIntegrationsCredentials saveUserIntegration(Map<String, Object> integrationDetail, Long userId) {
+        Long integrationId = ((Number) integrationDetail.get("integrationId")).longValue();
+        Optional<UserIntegrationsCredentials> existingOpt = userIntegrationsCredentialsRepository
+                .findBySystemIntegrations_IdAndUser_Id(integrationId, userId);
+        UserIntegrationsCredentials credentials;
+        if (existingOpt.isPresent()) {
+            credentials = existingOpt.get();
+            Map<String, String> authDetail = objectMapper.convertValue(
+                    integrationDetail.get("authDetail"),
+                    new TypeReference<Map<String, String>>() {
+                    });
+            credentials.setAuthDetail(authDetail);
+        } else {
+            credentials = objectMapper.convertValue(
+                    integrationDetail,
+                    UserIntegrationsCredentials.class);
+            Users user = usersRepository.findById(userId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "User not found"));
+            SystemIntegrations systemIntegration = systemIntegrationsRepository.findById(integrationId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Integration not found"));
+            credentials.setUser(user);
+            credentials.setSystemIntegrations(systemIntegration);
+            Map<String, String> authDetail = objectMapper.convertValue(
+                    integrationDetail.get("authDetail"),
+                    new TypeReference<Map<String, String>>() {
+                    });
+            credentials.setAuthDetail(authDetail);
+        }
+        return userIntegrationsCredentialsRepository.save(credentials);
+    }
+
+    public Map<String, String> updateUserDetails(Map<String, String> map, Long userId) {
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+
+        String password = map.get("password");
+        String email = map.get("email");
+        if (password != null && !password.isEmpty()) {
+            user.setPassword(passwordEncoder.encode(password));
+        }
+        if (email != null && !email.isEmpty()) {
+            user.setEmail(email);
+        }
+        usersRepository.save(user);
+        return Map.of("message", "User details updated successfully");
+    }
+
+    public Map<String, String> sendNewPassword(Long userId) {
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+        String newPassword = generateRandomPassword(10);
+        user.setPassword(passwordEncoder.encode(newPassword));
+        usersRepository.save(user);
+        Map<String, String> response = new HashMap<>();
+        response.put("newPassword", newPassword);
+        response.put("message", "New password generated successfully!");
+        return response;
+    }
+
+    private String generateRandomPassword(int length) {
+        SecureRandom random = new SecureRandom();
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%!&*";
+        StringBuilder password = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            password.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return password.toString();
+    }
+
+    public Map<String, Object> me(Long userId) {
+        Users users = usersRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not Authorized"));
+        Map<String, Object> userMap = new HashMap<>();
+        userMap.put("name", users.getUsername());
+        userMap.put("email", users.getEmail());
+        userMap.put("avatar", users.getAvatar());
+        return userMap;
+    }
 }

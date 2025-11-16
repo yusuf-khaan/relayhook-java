@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -12,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -61,19 +63,25 @@ public class UserService {
     private final WorkflowRequestsRepository workflowRequestsRepository;
     private static final long EXPIRATION_MILLIS = 1000L * 60 * 60 * 24 * 7; // 7 days
 
-
-    public Users createUser(Users userDTO, HttpServletResponse response, HttpServletRequest request) {
-        userDTO.setPassword(passwordEncoder.encode(userDTO.getPassword()));
-        String jwtToken = jwtUtil.generateToken(userDTO.getUsername());
+    public Users createUser(Map<String, String> userDTO, HttpServletResponse response) {
+        Optional<Users> existingUser = usersRepository.findByEmail(userDTO.get("email"));
+        if (existingUser.isPresent()) {
+            throw new RuntimeException("User with this email already exists");
+        }
+        Users user = new Users();
+        user.setEmail(userDTO.get("email"));
+        user.setPassword(passwordEncoder.encode(userDTO.get("password")));
+        Users savedUser = usersRepository.save(user);
+        String jwtToken = jwtUtil.generateToken(savedUser.getUsername());
         ResponseCookie cookie = ResponseCookie.from("jwt", jwtToken)
                 .httpOnly(true)
                 .secure(true)
                 .sameSite("None")
                 .path("/")
-                .maxAge(7 * 24 * 60 * 60)
+                .maxAge(7 * 24 * 60 * 60) // 7 days
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-        return usersRepository.save(userDTO);
+        return savedUser;
     }
 
     public Map<String, String> loginUser(Map<String, String> userDTO, HttpServletResponse response,
@@ -94,8 +102,6 @@ public class UserService {
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         return Map.of("message", "Login successful",
-        "navigate", "/hooks/project"
-        );
+                "navigate", "/hooks/project");
     }
-
 }
