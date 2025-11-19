@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### git ignore ###
+src/main/resources/application.properties
+node_errors.log
