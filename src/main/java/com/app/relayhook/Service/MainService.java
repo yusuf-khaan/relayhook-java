@@ -22,7 +22,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-
+import com.app.relayhook.Configs.AppConfig;
+import com.app.relayhook.DTO.GetAllIntegrationDTO;
 import com.app.relayhook.DTO.IntegrationsDTO;
 import com.app.relayhook.DTO.WorkflowDTO;
 import com.app.relayhook.DTO.WorkflowNodesDTO;
@@ -185,45 +186,22 @@ public class MainService {
 
     public Object getAllIntegrations(Pageable pageable, String search) {
         Page<SystemIntegrations> providerPage;
-
-        if (search == null || search.isBlank()) {
+        if (search.isEmpty()) {
             providerPage = systemIntegrationsRepository.findAll(pageable);
         } else {
             providerPage = systemIntegrationsRepository
                     .findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(search, search, pageable);
         }
-        List<String> providerNames = providerPage.stream()
-                .map(SystemIntegrations::getName)
-                .collect(Collectors.toList());
-        JsonNode providerListJson = objectMapper.valueToTree(providerPage);
-        JsonNode providersMetaDataArray = relayhookAbs.getProvidersMetaData(providerNames);
-        NodeErrorLogger.logError(providersMetaDataArray);
-        Map<String, JsonNode> metadataMap = new HashMap<>();
-        if (providersMetaDataArray != null && providersMetaDataArray.isArray()) {
-            for (JsonNode node : providersMetaDataArray) {
-                String providerKey = node.path("provider").asText();
-                JsonNode metadata = node.path("metadata");
-                if (!providerKey.isBlank() && !metadata.isMissingNode()) {
-                    metadataMap.put(providerKey, metadata);
-                }
-            }
+        List<String> providerList = new ArrayList<>();
+        for (SystemIntegrations system : providerPage.getContent()){
+            providerList.add(system.getProvider());
         }
-
-        JsonNode contentNode = providerListJson.path("content");
-        if (contentNode.isArray()) {
-            for (JsonNode node : contentNode) {
-                if (node.isObject()) {
-                    ObjectNode objNode = (ObjectNode) node;
-                    String providerKey = objNode.path("provider").asText();
-                    JsonNode metadata = metadataMap.get(providerKey);
-                    if (metadata != null) {
-                        objNode.set("metadata", metadata);
-                    }
-                }
-            }
-        }
-
-        return providerListJson;
+        Object providersMetaData = relayhookAbs.getProvidersMetaData(providerList);
+        return providersMetaData;
+        // providerPage.get().
+        // relayhookAbs.getProvidersMetaData(null)
+        // return providerPage.map(mapper -> new GetAllIntegrationDTO(
+        // ));
     }
 
     public Users createUser(Users userDTO, HttpServletResponse response, HttpServletRequest request) {
