@@ -111,6 +111,7 @@ public class MainService {
                         node.setWorkflow(workflow);
                         node.setCanExecuteParallel(levelDTO.getCanExecuteParallel());
                         node.setRetriesLeft(nodeDTO.getRetry() != null ? nodeDTO.getRetry() : 3);
+                        node.setSchemaData(nodeDTO.getSchemaData());
                         nodesList.add(node);
                     }
                 }
@@ -141,7 +142,7 @@ public class MainService {
             throw new IllegalArgumentException("Workflow must contain at least one node.");
         }
 
-        List<Long> nodeIds = new ArrayList<>();
+        List<Integer> nodeIds = new ArrayList<>();
         for (WorkflowNodesDTO.LevelWrapper node : allNodes) {
             if (node.getNodeId() == null) {
                 throw new IllegalArgumentException("Each node must have a nodeId.");
@@ -161,7 +162,7 @@ public class MainService {
             }
 
             if (node.getInputSources() != null) {
-                for (Long inputId : node.getInputSources()) {
+                for (Integer inputId : node.getInputSources()) {
                     if (!nodeIds.contains(inputId)) {
                         throw new IllegalArgumentException(
                                 "Node " + node.getNodeId() + " has invalid input reference: " + inputId);
@@ -170,7 +171,7 @@ public class MainService {
             }
 
             if (node.getOutputSources() != null) {
-                for (Long outputId : node.getOutputSources()) {
+                for (Integer outputId : node.getOutputSources()) {
                     if (!nodeIds.contains(outputId)) {
                         throw new IllegalArgumentException(
                                 "Node " + node.getNodeId() + " has invalid output reference: " + outputId);

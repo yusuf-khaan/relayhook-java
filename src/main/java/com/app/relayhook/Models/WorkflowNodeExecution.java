@@ -9,9 +9,11 @@ import org.hibernate.annotations.Type;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.app.relayhook.Enums.NodeStatus;
+import com.app.relayhook.Models.WorkflowNodes.SchemaData;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.vladmihalcea.hibernate.type.json.JsonType;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
@@ -47,7 +49,7 @@ public class WorkflowNodeExecution {
     @Enumerated(EnumType.STRING)
     private NodeStatus status = NodeStatus.PENDING;
 
-    private Long retriesLeft = 3L;
+    private Integer retriesLeft = 3;
 
     @CreationTimestamp
     @Column(updatable = false)
@@ -64,7 +66,12 @@ public class WorkflowNodeExecution {
     @Column(columnDefinition = "jsonb")
     private Map<String,Object> outputData;
 
-    private Long level;
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    @Nullable
+    private Map<Integer, List<SchemaData>> schemaData;
+
+    private Integer level;
 
     @ElementCollection
     private List<String> errorLogs;
