@@ -50,6 +50,7 @@ public class WorkflowNodesDTO {
         private Integer id;
         private double x;
         private double y;
+        private Boolean isInitial =false;
         private IntegrationDataObjectWrapper object;
     }
 

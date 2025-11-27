@@ -91,5 +91,6 @@ public class WorkflowNodes {
     public static class SchemaData {
         private String inputKey;
         private String mappedWith;
+        private String customLogic;
     }
 }
