@@ -53,6 +53,7 @@ public class WorkflowExecutorService {
                 payload.put("workflowId", workflow.getId());
                 payload.put("workflowExecutionId", workflowExecution.getId());
                 payload.put("inputData", requestData);
+                payload.put("nodeComesFrom", null);
                 TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
                     @Override
                     public void afterCommit() {
