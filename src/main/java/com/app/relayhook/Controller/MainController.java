@@ -65,9 +65,9 @@ public class MainController {
     }
 
     @PostMapping("/save-workflow-request")
-    public WorkflowRequests saveWorkflowRequests(HttpServletRequest request, @RequestBody Map<String, String> map) {
+    public Object saveWorkflowRequests(HttpServletRequest request, @RequestBody WorkflowRequestsDTO workflowRequestsDTO) {
         Long userId = (Long) request.getAttribute("userId");
-        return mainService.saveWorkflowRequest(map, userId);
+        return mainService.saveWorkflowRequest(workflowRequestsDTO, userId);
     }
 
     @GetMapping("/get-workflow-requests")

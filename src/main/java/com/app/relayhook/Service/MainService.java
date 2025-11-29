@@ -194,7 +194,7 @@ public class MainService {
                     .findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(search, search, pageable);
         }
         List<String> providerList = new ArrayList<>();
-        for (SystemIntegrations system : providerPage.getContent()){
+        for (SystemIntegrations system : providerPage.getContent()) {
             providerList.add(system.getProvider());
         }
         Object providersMetaData = relayhookAbs.getProvidersMetaData(providerList);
@@ -219,19 +219,16 @@ public class MainService {
         return usersRepository.save(userDTO);
     }
 
-    public WorkflowRequests saveWorkflowRequest(Map<String, String> map, Long userId) {
+    public WorkflowRequests saveWorkflowRequest(WorkflowRequestsDTO workflowRequestsDTO, Long userId) {
         WorkflowRequests workflowRequests = new WorkflowRequests();
         Users user = usersRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "UNAUTHORIZED"));
-        workflowRequests.setEmailToContact(map.getOrDefault("email", ""));
-        workflowRequests.setDescription(map.getOrDefault("description", ""));
-        workflowRequests.setName(map.getOrDefault("name", ""));
-        Object value = map.get("scheduledTime");
-        if (value instanceof String str && !str.isBlank()) {
-            workflowRequests.setScheduledTimeToContact(LocalDateTime.parse(str));
-        } else {
-            workflowRequests.setScheduledTimeToContact(null);
-        }
+        workflowRequests.setEmailToContact(workflowRequestsDTO.email());
+        workflowRequests.setDescription(workflowRequestsDTO.description());
+        workflowRequests.setName(workflowRequestsDTO.name());
+        workflowRequests.setTags(workflowRequestsDTO.tags());
+        workflowRequests.setTrigger(workflowRequestsDTO.trigger());
+        workflowRequests.setScheduledTimeToContact(workflowRequestsDTO.scheduledTime());
         workflowRequests.setUser(user);
         return workflowRequestsRepository.save(workflowRequests);
     }
@@ -249,14 +246,13 @@ public class MainService {
         return workflowRequestsPage.map(req -> new WorkflowRequestsDTO(
                 req.getId(),
                 req.getName(),
+                req.getEmailToContact(),
                 req.getDescription(),
-                List.of("Manual"),
-                // req.getTags(),
-                // req.getTrigger(),
-                List.of("User Request"),
+                req.getTrigger(),
+                req.getTags(),
                 req.getStatus(),
                 req.getProgress(),
-                req.getUpdatedAt().toLocalDate()));
+                req.getScheduledTimeToContact()));
     }
 
     public Page<WorkflowResponseDTO> getUserWorkflows(HttpServletRequest request, String search, Pageable pageable) {
