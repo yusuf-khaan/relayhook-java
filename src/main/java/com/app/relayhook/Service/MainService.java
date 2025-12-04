@@ -21,6 +21,8 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.server.ResponseStatusException;
 import com.app.relayhook.Configs.AppConfig;
 import com.app.relayhook.DTO.GetAllIntegrationDTO;
@@ -36,12 +38,15 @@ import com.app.relayhook.Models.SystemIntegrations;
 import com.app.relayhook.Models.UserIntegrationsCredentials;
 import com.app.relayhook.Models.Users;
 import com.app.relayhook.Models.Workflow;
+import com.app.relayhook.Models.WorkflowExecution;
 import com.app.relayhook.Models.WorkflowNodes;
 import com.app.relayhook.Models.WorkflowRequests;
 import com.app.relayhook.Repository.ScheduledChangesRepository;
 import com.app.relayhook.Repository.SystemIntegrationsRepository;
 import com.app.relayhook.Repository.UserIntegrationsCredentialsRepository;
 import com.app.relayhook.Repository.UsersRepository;
+import com.app.relayhook.Repository.WorkflowExecutionRepository;
+import com.app.relayhook.Repository.WorkflowNodeExecutionRepository;
 import com.app.relayhook.Repository.WorkflowRepository;
 import com.app.relayhook.Repository.WorkflowRequestsRepository;
 import com.app.relayhook.SecurityConfig.JwtUtil;
@@ -74,6 +79,8 @@ public class MainService {
     private final WorkflowRequestsRepository workflowRequestsRepository;
     private final ScheduledChangesRepository scheduledChangesRepository;
     private final UserIntegrationsCredentialsRepository userIntegrationsCredentialsRepository;
+    private final WorkflowExecutionRepository workflowExecutionRepository;
+    private final WorkflowNodeExecutionRepository workflowNodeExecutionRepository;
 
     @Transactional
     public Workflow saveWorkflow(HttpServletRequest request, WorkflowDTO dto) {
@@ -318,33 +325,6 @@ public class MainService {
         return scheduledChangesRepository.save(sc);
     }
 
-    // public UserIntegrationsCredentials saveUserIntegration(Map<String, Object>
-    // integrationDetail, Long userId) {
-    // Long integrationId = ((Number)
-    // integrationDetail.get("integrationId")).longValue();
-    // Optional<UserIntegrationsCredentials> existingOpt =
-    // userIntegrationsCredentialsRepository
-    // .findBySystemIntegrations_IdAndUser_Id(integrationId, userId);
-    // UserIntegrationsCredentials credentials;
-    // if (existingOpt.isPresent()) {
-    // credentials = existingOpt.get();
-    // objectMapper.updateValue(credentials, integrationDetail);
-    // } else {
-    // credentials = objectMapper.convertValue(integrationDetail,
-    // UserIntegrationsCredentials.class);
-    // Users user = usersRepository.findById(userId)
-    // .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "User
-    // not found"));
-    // SystemIntegrations systemIntegration =
-    // systemIntegrationsRepository.findById(integrationId)
-    // .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
-    // "Integration not found"));
-    // credentials.setUser(user);
-    // credentials.setSystemIntegrations(systemIntegration);
-    // }
-    // return userIntegrationsCredentialsRepository.save(credentials);
-    // }
-
     public UserIntegrationsCredentials saveUserIntegration(Map<String, Object> integrationDetail, Long userId) {
         Long integrationId = ((Number) integrationDetail.get("integrationId")).longValue();
         Optional<UserIntegrationsCredentials> existingOpt = userIntegrationsCredentialsRepository
@@ -417,10 +397,46 @@ public class MainService {
     public Map<String, Object> me(Long userId) {
         Users users = usersRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Not Authorized"));
+        Long totalWorkflows = workflowRepository.countByUserId(userId);
         Map<String, Object> userMap = new HashMap<>();
         userMap.put("name", users.getUsername());
         userMap.put("email", users.getEmail());
         userMap.put("avatar", users.getAvatar());
+        userMap.put("totalWorkflows", totalWorkflows);
         return userMap;
+    }
+
+    public Map<String, Object> getWorkflowStatistics(Long userId, Long workflowId) {
+        Workflow workflow = workflowRepository.findById(workflowId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Workflow not found"));
+        Long numberOfTimesWorkflowExecuted = workflowExecutionRepository.countByWorkflow_Id(workflowId);
+        WorkflowExecution workflowExecution = workflowExecutionRepository.findTopByWorkflowIdOrderByUpdatedAtDesc(workflowId);
+        Long numberOfNodes = (long) workflow.getWorkflowNodesData().size();
+        Map<String, Object> workflowDetail = new HashMap<>();
+        workflowDetail.put("workflow", workflow);
+        workflowDetail.put("name", workflow.getName());
+        workflowDetail.put("executionCount", numberOfTimesWorkflowExecuted);
+        workflowDetail.put("numberOfNodes", numberOfNodes);
+        workflowDetail.put("lastExecutedAt", workflowExecution != null ? workflowExecution.getUpdatedAt() : null);
+        workflowDetail.put("triggers", workflow.getTrigger());
+        workflowDetail.put("tags", workflow.getTags());
+        workflowDetail.put("scheduledAt", workflow.getSchedule());
+        return workflowDetail;
+    }
+
+    public Workflow updateWorkflow(Long workflowId, Map<String, Object> updates){
+         Workflow existing = workflowRepository.findById(workflowId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Workflow not found"));
+        try{
+        objectMapper.updateValue(existing, updates);
+        } catch (Exception e){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid update data");
+        }
+        return workflowRepository.save(existing);
+    }
+
+     public List<WorkflowExecution> getWorkflowExecution(Long userId, Long workflowId){
+         List<WorkflowExecution> existing = workflowExecutionRepository.findByWorkflow_IdOrderByCreatedAtDesc(workflowId);
+        return existing;
     }
 }

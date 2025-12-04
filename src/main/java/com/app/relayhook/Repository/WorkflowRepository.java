@@ -14,4 +14,5 @@ public interface WorkflowRepository extends JpaRepository<Workflow, Long>{
 
     Page<Workflow> findByUserIdAndNameContainingIgnoreCase(Long userId, String search, Pageable pageable);
 
+    Long countByUserId(Long userId);
 }
