@@ -15,7 +15,7 @@ public interface WorkflowNodeRepository extends JpaRepository<WorkflowNodes, Lon
 
      @EntityGraph(attributePaths = {"inputNodes", "outputNodes"})
     Optional<WorkflowNodes> findWithNodesById(Long id);
-    Optional<WorkflowNodes> findByNodeIdAndWorkflowId(Long nodeId, Long workflowId);
-    List<WorkflowNodes> findByWorkflowIdAndInputNodesContaining(Long workflowId, Long inputNodeId);
+    Optional<WorkflowNodes> findByNodeIdAndWorkflowId(Integer nodeId, Long workflowId);
+    List<WorkflowNodes> findByWorkflowIdAndInputNodesContaining(Long workflowId, Integer inputNodeId);
 
 }

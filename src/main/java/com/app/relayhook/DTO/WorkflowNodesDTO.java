@@ -6,6 +6,7 @@ import java.util.Map;
 import org.slf4j.event.Level;
 
 import com.app.relayhook.Enums.NodeType;
+import com.app.relayhook.Models.WorkflowNodes.SchemaData;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -21,7 +22,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class WorkflowNodesDTO {
 
-    private Long level;
+    private Integer level;
 
     @Nullable
     private NodeType nodeType = null;
@@ -34,21 +35,22 @@ public class WorkflowNodesDTO {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class LevelWrapper {
-        private Long nodeId;
+        private Integer nodeId;
         private Integer retry = 3;
-        private List<Long> inputSources;
-        private List<Long> outputSources;
+        private List<Integer> inputSources;
+        private List<Integer> outputSources;
         private NodeDataWrapper nodeData = null;
-        private SchemaDataWrapper schemaData = null;
+        private Map<Integer, List<SchemaData>> schemaData;
     }
 
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
     public static class NodeDataWrapper {
-        private Long id;
-        private Long x;
-        private Long y;
+        private Integer id;
+        private double x;
+        private double y;
+        private Boolean isInitial =false;
         private IntegrationDataObjectWrapper object;
     }
 
@@ -58,24 +60,17 @@ public class WorkflowNodesDTO {
     public static class IntegrationDataObjectWrapper {
         private Long id;
         private String name;
+        private Map<String,Object> defaultPayload;
+        private String provider;
         private String description;
         private String action;
         private String apiUrl;
     }
 
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class SchemaDataWrapper {
-        private Long nodeId;
-        private List<ProcessingSchemaWrapper> processingSchema;
-    }
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class ProcessingSchemaWrapper {
-        private String inputKey;
-        private String mappedWith;
-    }
+    // @Data
+    // @AllArgsConstructor
+    // @NoArgsConstructor
+    // public static class SchemaDataWrapper {
+    //     private Map<Long, List<ProcessingSchemaWrapper>> schemaData;
+    // }
 }

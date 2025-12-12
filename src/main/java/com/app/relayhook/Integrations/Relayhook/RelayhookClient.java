@@ -1,5 +1,6 @@
 package com.app.relayhook.Integrations.Relayhook;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -15,6 +16,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.app.relayhook.Logs.NodeErrorLogger;
+import com.app.relayhook.Models.WorkflowNodes.SchemaData;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -93,9 +95,12 @@ public class RelayhookClient implements RelayhookAbs {
         return sendRequest("POST", "/api/integration/get-provider-metadata", Map.of("provider", providersList), false);
     }
 
-    public JsonNode executeAutomationRequest(Map<String,Object> request, String action, String provider) {
+    public JsonNode executeAutomationRequest(Map<String,Object> request, String action, String provider, List<SchemaData> schemaData) {
         String url = buildUrlForExecutions(provider, action);
-        return sendRequest("POST", url, request, false);
+        Map<String,Object> requestBuild = new HashMap<>();
+        requestBuild.put("data", request);
+        requestBuild.put("schemaData", schemaData);
+        return sendRequest("POST", url, requestBuild, false);
     }
 
     private String buildUrlForExecutions(String provider, String action){

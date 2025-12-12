@@ -2,18 +2,16 @@ package com.app.relayhook.Models;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import com.app.relayhook.Enums.WorkflowStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.vladmihalcea.hibernate.type.json.JsonType;
 
+import io.micrometer.common.lang.Nullable;
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -21,7 +19,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -30,21 +27,36 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class WorkflowExecution {
+public class WorkflowRequests {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private WorkflowStatus status = WorkflowStatus.STARTED;
+    private String name;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JsonIgnore
-    private Workflow workflow;
+    private String status = "Pending";
+
+    private String description;
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    private List<String> trigger;
+    List<String> tags;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    List<String> trigger;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
+    private Users user;
+
+    private Integer progress = 0;
+
+    private String emailToContact;
+
+    @Nullable
+    private LocalDateTime scheduledTimeToContact;
 
     @CreationTimestamp
     @Column(updatable = false)
@@ -52,11 +64,4 @@ public class WorkflowExecution {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
-
-    @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb")
-    private Map<String, Object> metaData;
-
-    @OneToMany(mappedBy = "workflowExecution", fetch = FetchType.LAZY)
-    private List<WorkflowNodeExecution> workflowExecutionNodes;
 }

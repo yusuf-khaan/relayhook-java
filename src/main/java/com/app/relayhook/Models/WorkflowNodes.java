@@ -39,14 +39,18 @@ public class WorkflowNodes {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long level;
-    private Long nodeId;
+    private Integer level;
+    private Integer nodeId;
 
     @ElementCollection(fetch = FetchType.EAGER)
-    private List<Long> inputNodes;
+    private List<Integer> inputNodes;
 
     @ElementCollection(fetch = FetchType.EAGER)
-    private List<Long> outputNodes;
+    private List<Integer> outputNodes;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private Map<Integer, List<SchemaData>> schemaData;
 
     private String action = null;
     private String provider = null;
@@ -80,4 +84,13 @@ public class WorkflowNodes {
 
     @Enumerated(EnumType.STRING)
     private NodeType nodeType = NodeType.INTEGRATION;
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class SchemaData {
+        private String inputKey;
+        private String mappedWith;
+        private String customLogic;
+    }
 }

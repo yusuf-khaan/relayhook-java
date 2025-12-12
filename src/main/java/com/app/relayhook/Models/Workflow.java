@@ -23,14 +23,20 @@ import org.hibernate.annotations.Type;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.vladmihalcea.hibernate.type.json.JsonType;
 
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
+@JsonIgnoreProperties(
+    value = { "id", "user", "createdAt", "updatedAt","workflowData", "workflowNodesData", "webhookUrl"},
+    allowGetters = true
+)
 public class Workflow {
 
+    @JsonIgnore
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -38,6 +44,11 @@ public class Workflow {
     private String name;
 
     private String description;
+    private String avatar;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    private List<String> tags;
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
@@ -45,7 +56,7 @@ public class Workflow {
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    private Map<String,Object> trigger;
+    private List<String> trigger;
 
      @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
