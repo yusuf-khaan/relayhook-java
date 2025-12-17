@@ -31,7 +31,7 @@ public class Cookies {
 
         String cookieDomain = null;
         if (!requestDomain.equals("localhost") && !requestDomain.startsWith("127.")) {
-            cookieDomain = ".surgeit.co.in"; // ✅ Only apply domain in production
+            cookieDomain = ".relayhook.in"; // ✅ Only apply domain in production
         }
 
         ResponseCookie.ResponseCookieBuilder cookieBuilder = ResponseCookie.from("jwt", jwtToken)

@@ -80,9 +80,8 @@ public class SecurityConfig {
         config.setAllowCredentials(true);
         config.setAllowedOrigins(List.of(
                 "http://localhost:4200",
-                "https://surgeit.vercel.app",
-                "https://www.surgeit.co.in",
-                "https://surgeit.co.in"));
+                "https://relayhook.in",
+                "https://www.relayhook.in"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setExposedHeaders(List.of("Authorization", "Set-Cookie"));
