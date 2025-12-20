@@ -56,11 +56,6 @@ public class SystemIntegrations {
 
     private String callbackUrl;
 
-
-    @OneToMany(mappedBy = "systemIntegrations")
-    @JsonIgnore
-    private List<UserIntegrationsCredentials> userIntegrationsCredentials;
-
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;

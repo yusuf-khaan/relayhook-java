@@ -13,5 +13,5 @@ import com.app.relayhook.Models.UserIntegrationsCredentials;
 @Repository
 public interface UserIntegrationsCredentialsRepository extends JpaRepository<UserIntegrationsCredentials, Long> {
 
-    Optional<UserIntegrationsCredentials> findBySystemIntegrations_IdAndUser_Id(Long integrationId, Long userId);
+    Optional<UserIntegrationsCredentials> findBySlugAndUser_Id(String slug, Long userId);
 }

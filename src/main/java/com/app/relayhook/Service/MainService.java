@@ -301,7 +301,8 @@ public class MainService {
                 integration.getCallbackUrl(),
                 integration.getImage(),
                 integration.getCategory(),
-                integration.getAuthPayload()));
+                integration.getAuthPayload(),
+                integration.getProvider()));
     }
 
     public Page<ScheduleChanges> getScheduledChanges(Pageable pageable, String search, Long userId,
@@ -327,8 +328,9 @@ public class MainService {
 
     public UserIntegrationsCredentials saveUserIntegration(Map<String, Object> integrationDetail, Long userId) {
         Long integrationId = ((Number) integrationDetail.get("integrationId")).longValue();
+        String slug = integrationDetail.get("slug").toString();
         Optional<UserIntegrationsCredentials> existingOpt = userIntegrationsCredentialsRepository
-                .findBySystemIntegrations_IdAndUser_Id(integrationId, userId);
+                .findBySlugAndUser_Id(slug, userId);
         UserIntegrationsCredentials credentials;
         if (existingOpt.isPresent()) {
             credentials = existingOpt.get();
@@ -343,15 +345,12 @@ public class MainService {
                     UserIntegrationsCredentials.class);
             Users user = usersRepository.findById(userId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "User not found"));
-            SystemIntegrations systemIntegration = systemIntegrationsRepository.findById(integrationId)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Integration not found"));
             credentials.setUser(user);
-            credentials.setSystemIntegrations(systemIntegration);
             Map<String, String> authDetail = objectMapper.convertValue(
                     integrationDetail.get("authDetail"),
                     new TypeReference<Map<String, String>>() {
                     });
-            credentials.setSlug(systemIntegration.getProvider());
+            credentials.setSlug(slug);
             credentials.setAuthDetail(authDetail);
         }
         return userIntegrationsCredentialsRepository.save(credentials);
