@@ -50,6 +50,8 @@ public class UserIntegrationsCredentials {
     @Column(columnDefinition = "jsonb")
     private Map<String,String> authDetail;
 
+    private String slug;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;

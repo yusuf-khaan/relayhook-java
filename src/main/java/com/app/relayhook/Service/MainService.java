@@ -351,6 +351,7 @@ public class MainService {
                     integrationDetail.get("authDetail"),
                     new TypeReference<Map<String, String>>() {
                     });
+            credentials.setSlug(systemIntegration.getProvider());
             credentials.setAuthDetail(authDetail);
         }
         return userIntegrationsCredentialsRepository.save(credentials);
