@@ -25,7 +25,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.server.ResponseStatusException;
 import com.app.relayhook.Configs.AppConfig;
-import com.app.relayhook.DTO.GetAllIntegrationDTO;
 import com.app.relayhook.DTO.IntegrationsDTO;
 import com.app.relayhook.DTO.WorkflowDTO;
 import com.app.relayhook.DTO.WorkflowNodesDTO;
@@ -206,10 +205,6 @@ public class MainService {
         }
         Object providersMetaData = relayhookAbs.getProvidersMetaData(providerList);
         return providersMetaData;
-        // providerPage.get().
-        // relayhookAbs.getProvidersMetaData(null)
-        // return providerPage.map(mapper -> new GetAllIntegrationDTO(
-        // ));
     }
 
     public Users createUser(Users userDTO, HttpServletResponse response, HttpServletRequest request) {

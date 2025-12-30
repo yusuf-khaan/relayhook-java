@@ -42,7 +42,7 @@ public class SystemIntegrations {
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    private Map<String, String> authPayload;
+    private Map<String, Object> authPayload;
 
     private String description;
 
