@@ -37,6 +37,11 @@ public class RabbitMqConfig {
     }
 
     @Bean
+    public TopicExchange retryExchange() {
+        return new TopicExchange(RETRY_EXCHANGE);
+    }
+
+    @Bean
     public Queue workflowQueue() {
         return new Queue(EXECUTE_QUEUE, true); // durable
     }
@@ -52,8 +57,8 @@ public class RabbitMqConfig {
     }
 
     @Bean
-    public Binding retryBinding(Queue retryQueue, TopicExchange workflowExchange) {
-        return BindingBuilder.bind(retryQueue).to(workflowExchange).with(RETRY_ROUTING_KEY);
+    public Binding retryBinding(Queue retryQueue, TopicExchange retryExchange) {
+        return BindingBuilder.bind(retryQueue).to(retryExchange).with(RETRY_ROUTING_KEY);
     }
 
     @Bean

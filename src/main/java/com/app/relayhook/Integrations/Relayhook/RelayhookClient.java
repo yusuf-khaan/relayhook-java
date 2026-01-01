@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -70,6 +71,10 @@ public class RelayhookClient implements RelayhookAbs {
             String jsonResponse = response.getBody();
             if (jsonResponse == null || jsonResponse.isBlank()) {
                 return objectMapper.createObjectNode();
+            }
+            HttpStatusCode statusCode = response.getStatusCode();
+            if(statusCode.value() >= 400){
+                // throw new RelayhookException(response.getBody());
             }
             // Cast to ObjectNode for mutability
             return objectMapper.readTree(jsonResponse);
