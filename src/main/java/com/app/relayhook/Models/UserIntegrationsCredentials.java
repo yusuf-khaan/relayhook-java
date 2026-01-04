@@ -27,11 +27,6 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(
-    uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"user_id", "system_integrations_id"})
-    }
-)
 public class UserIntegrationsCredentials {
 
     @Id
@@ -41,14 +36,17 @@ public class UserIntegrationsCredentials {
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnore
     private Users user;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JsonIgnore
-    private SystemIntegrations systemIntegrations;
-
+   
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Map<String,String> authDetail;
+
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb")
+    @JsonIgnore
+    private String extraDetails;
+
+    private String slug;
 
     @CreationTimestamp
     @Column(updatable = false)

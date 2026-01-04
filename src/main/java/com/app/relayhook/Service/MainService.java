@@ -25,7 +25,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.server.ResponseStatusException;
 import com.app.relayhook.Configs.AppConfig;
-import com.app.relayhook.DTO.GetAllIntegrationDTO;
 import com.app.relayhook.DTO.IntegrationsDTO;
 import com.app.relayhook.DTO.WorkflowDTO;
 import com.app.relayhook.DTO.WorkflowNodesDTO;
@@ -206,10 +205,6 @@ public class MainService {
         }
         Object providersMetaData = relayhookAbs.getProvidersMetaData(providerList);
         return providersMetaData;
-        // providerPage.get().
-        // relayhookAbs.getProvidersMetaData(null)
-        // return providerPage.map(mapper -> new GetAllIntegrationDTO(
-        // ));
     }
 
     public Users createUser(Users userDTO, HttpServletResponse response, HttpServletRequest request) {
@@ -301,7 +296,8 @@ public class MainService {
                 integration.getCallbackUrl(),
                 integration.getImage(),
                 integration.getCategory(),
-                integration.getAuthPayload()));
+                integration.getAuthPayload(),
+                integration.getProvider()));
     }
 
     public Page<ScheduleChanges> getScheduledChanges(Pageable pageable, String search, Long userId,
@@ -327,8 +323,9 @@ public class MainService {
 
     public UserIntegrationsCredentials saveUserIntegration(Map<String, Object> integrationDetail, Long userId) {
         Long integrationId = ((Number) integrationDetail.get("integrationId")).longValue();
+        String slug = integrationDetail.get("slug").toString();
         Optional<UserIntegrationsCredentials> existingOpt = userIntegrationsCredentialsRepository
-                .findBySystemIntegrations_IdAndUser_Id(integrationId, userId);
+                .findBySlugAndUser_Id(slug, userId);
         UserIntegrationsCredentials credentials;
         if (existingOpt.isPresent()) {
             credentials = existingOpt.get();
@@ -343,14 +340,12 @@ public class MainService {
                     UserIntegrationsCredentials.class);
             Users user = usersRepository.findById(userId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "User not found"));
-            SystemIntegrations systemIntegration = systemIntegrationsRepository.findById(integrationId)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Integration not found"));
             credentials.setUser(user);
-            credentials.setSystemIntegrations(systemIntegration);
             Map<String, String> authDetail = objectMapper.convertValue(
                     integrationDetail.get("authDetail"),
                     new TypeReference<Map<String, String>>() {
                     });
+            credentials.setSlug(slug);
             credentials.setAuthDetail(authDetail);
         }
         return userIntegrationsCredentialsRepository.save(credentials);

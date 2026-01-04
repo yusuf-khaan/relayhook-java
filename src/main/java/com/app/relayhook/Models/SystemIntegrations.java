@@ -42,7 +42,7 @@ public class SystemIntegrations {
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    private Map<String, String> authPayload;
+    private Map<String, Object> authPayload;
 
     private String description;
 
@@ -55,11 +55,6 @@ public class SystemIntegrations {
     private String provider;
 
     private String callbackUrl;
-
-
-    @OneToMany(mappedBy = "systemIntegrations")
-    @JsonIgnore
-    private List<UserIntegrationsCredentials> userIntegrationsCredentials;
 
     @CreationTimestamp
     @Column(updatable = false)

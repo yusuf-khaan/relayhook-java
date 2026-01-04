@@ -11,5 +11,6 @@ public record IntegrationsDTO(
     String OauthUrl,
     String image,
     List<String> category,
-    Map<String, String> integrationDetailObject 
+    Map<String, Object> integrationDetailObject,
+    String slug
 ) {}

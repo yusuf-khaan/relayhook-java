@@ -1,7 +1,9 @@
 package com.app.relayhook.Service;
 
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +24,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.app.relayhook.DTO.WorkflowDTO;
 import com.app.relayhook.DTO.WorkflowNodesDTO;
+import com.app.relayhook.Integrations.Mail.MailAbs;
 import com.app.relayhook.Integrations.Relayhook.RelayhookAbs;
 import com.app.relayhook.Logs.NodeErrorLogger;
 import com.app.relayhook.Models.SystemIntegrations;
@@ -62,6 +65,7 @@ public class UserService {
     private final JwtUtil jwtUtil;
     private final WorkflowRequestsRepository workflowRequestsRepository;
     private static final long EXPIRATION_MILLIS = 1000L * 60 * 60 * 24 * 7; // 7 days
+    private final MailAbs mailAbs;
 
     public Users createUser(Map<String, String> userDTO, HttpServletResponse response) {
         Optional<Users> existingUser = usersRepository.findByEmail(userDTO.get("email"));
@@ -92,7 +96,7 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
         }
         String jwtToken = jwtUtil.generateToken(userDTO.get("email"));
-        log.info("Generated JWT Token: {}", jwtToken);
+        // log.info("Generated JWT Token: {}", jwtToken);
         ResponseCookie cookie = ResponseCookie.from("jwt", jwtToken)
                 .httpOnly(true)
                 .secure(true)
@@ -101,6 +105,12 @@ public class UserService {
                 .maxAge(EXPIRATION_MILLIS / 1000) // Convert milliseconds to seconds
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        // Map<String,Object> map = Map.of(
+        //     "name", user.getUsername(),
+        //     "loginDate", new SimpleDateFormat("dd-MM-yyyy").format(new Date())
+        // );
+        // mailAbs.sendTemplateMail("thekhanyusuf096@gmail.com","Welcome to Relayhooks! ", "login-email", map);
+
         return Map.of("message", "Login successful",
                 "navigate", "/hooks/project");
     }
