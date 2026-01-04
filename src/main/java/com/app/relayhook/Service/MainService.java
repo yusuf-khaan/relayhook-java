@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,6 +31,8 @@ import com.app.relayhook.DTO.WorkflowDTO;
 import com.app.relayhook.DTO.WorkflowNodesDTO;
 import com.app.relayhook.DTO.WorkflowRequestsDTO;
 import com.app.relayhook.DTO.WorkflowResponseDTO;
+import com.app.relayhook.Enums.NodeStatus;
+import com.app.relayhook.Enums.NodeType;
 import com.app.relayhook.Integrations.Relayhook.RelayhookAbs;
 import com.app.relayhook.Logs.NodeErrorLogger;
 import com.app.relayhook.Models.ScheduleChanges;
@@ -274,7 +277,6 @@ public class MainService {
                 wf.getCanExecuteParallel(),
                 wf.getIsActive(),
                 List.of("Development"),
-                wf.getExecutionCount(),
                 wf.getWebhookUrl(),
                 wf.getUpdatedAt().toLocalDate()));
         return workflowPage;
@@ -405,7 +407,8 @@ public class MainService {
         Workflow workflow = workflowRepository.findById(workflowId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Workflow not found"));
         Long numberOfTimesWorkflowExecuted = workflowExecutionRepository.countByWorkflow_Id(workflowId);
-        WorkflowExecution workflowExecution = workflowExecutionRepository.findTopByWorkflowIdOrderByUpdatedAtDesc(workflowId);
+        WorkflowExecution workflowExecution = workflowExecutionRepository
+                .findTopByWorkflowIdOrderByUpdatedAtDesc(workflowId);
         Long numberOfNodes = (long) workflow.getWorkflowNodesData().size();
         Map<String, Object> workflowDetail = new HashMap<>();
         workflowDetail.put("workflow", workflow);
@@ -419,19 +422,95 @@ public class MainService {
         return workflowDetail;
     }
 
-    public Workflow updateWorkflow(Long workflowId, Map<String, Object> updates){
-         Workflow existing = workflowRepository.findById(workflowId)
+    public Workflow updateWorkflow(Long workflowId, Map<String, Object> updates) {
+        Workflow existing = workflowRepository.findById(workflowId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Workflow not found"));
-        try{
-        objectMapper.updateValue(existing, updates);
-        } catch (Exception e){
+        try {
+            objectMapper.updateValue(existing, updates);
+        } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid update data");
         }
         return workflowRepository.save(existing);
     }
 
-     public List<WorkflowExecution> getWorkflowExecution(Long userId, Long workflowId){
-         List<WorkflowExecution> existing = workflowExecutionRepository.findByWorkflow_IdOrderByCreatedAtDesc(workflowId);
+    public List<WorkflowExecution> getWorkflowExecution(Long userId, Long workflowId) {
+        List<WorkflowExecution> existing = workflowExecutionRepository
+                .findByWorkflow_IdOrderByCreatedAtDesc(workflowId);
         return existing;
     }
+
+    public Map<String, Object> getWorkflowAnalysis(long workflowId, long userId) {
+
+        Workflow workflow = workflowRepository
+                .findByIdAndUserId(workflowId, userId)
+                .orElseThrow(() -> new RuntimeException("Workflow not found"));
+
+        List<WorkflowNodes> nodes = workflow.getWorkflowNodesData();
+
+        int totalNodes = nodes.size();
+
+        long successfulNodes = nodes.stream()
+                .filter(n -> n.getStatus() == NodeStatus.COMPLETED)
+                .count();
+
+        long failedNodes = nodes.stream()
+                .filter(n -> n.getStatus() == NodeStatus.FAILED)
+                .count();
+
+        int totalRetriesUsed = nodes.stream()
+                .mapToInt(n -> Math.max(0, 3 - n.getRetriesLeft()))
+                .sum();
+
+        List<WorkflowNodes> integrationNodes = nodes.stream()
+                .filter(n -> n.getNodeType() == NodeType.INTEGRATION)
+                .toList();
+
+        int totalIntegrations = integrationNodes.size();
+
+        List<String> integrationNames = integrationNodes.stream()
+                .map(WorkflowNodes::getProvider)
+                .filter(p -> p != null && !p.isBlank())
+                .distinct()
+                .toList();
+
+        double successRate = totalNodes == 0
+                ? 0
+                : (successfulNodes * 100.0) / totalNodes;
+
+        Map<String, Object> result = new LinkedHashMap<>();
+
+        /* -------------------- Core -------------------- */
+        result.put("workflowId", workflow.getId());
+        result.put("name", workflow.getName());
+        result.put("isActive", workflow.getIsActive());
+
+        /* -------------------- Execution -------------------- */
+        result.put("totalNodes", totalNodes);
+        // result.put("totalExecutions", workflow.getExecutionCount());
+        result.put("successfulNodes", successfulNodes);
+        result.put("failedNodes", failedNodes);
+        result.put("successRate", Math.round(successRate * 100.0) / 100.0);
+        result.put("totalRetries", totalRetriesUsed);
+
+        /* -------------------- Trigger -------------------- */
+        result.put("trigger", workflow.getTrigger());
+        result.put("schedule", workflow.getSchedule());
+
+        /* -------------------- Integrations -------------------- */
+        result.put("totalIntegrations", totalIntegrations);
+        result.put("integrationNames", integrationNames);
+
+        /* -------------------- Timing -------------------- */
+        result.put("createdAt", workflow.getCreatedAt());
+        result.put("updatedAt", workflow.getUpdatedAt());
+
+        // Optional (if stored in metadata later)
+        if (workflow.getMetadata() != null) {
+            result.put("lastExecutedAt", workflow.getMetadata().get("lastExecutedAt"));
+            result.put("avgRuntime", workflow.getMetadata().get("avgRuntime"));
+        }
+
+        return result;
+    }
+
 }

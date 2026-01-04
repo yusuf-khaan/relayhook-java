@@ -44,7 +44,7 @@ public class WorkflowNodeExecution {
     private WorkflowExecution workflowExecution;
 
     // this reference to the workflow postgres node id, not inner node id
-    private Long workflowNodeId;
+    private Long workflowNodeId; //this is dbs primary id of node
 
     @Enumerated(EnumType.STRING)
     private NodeStatus status = NodeStatus.PENDING;

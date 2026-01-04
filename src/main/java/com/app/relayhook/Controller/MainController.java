@@ -58,6 +58,13 @@ public class MainController {
         return mainService.getUserWorkflows(request, search, pageable);
     }
 
+     @GetMapping("/get-workflow-analysis/{id}")
+    public Map<String,Object> getWorkflowAnalysis(HttpServletRequest request,
+           @PathVariable long id) {
+            Long userId = (long) request.getAttribute("userId");
+        return mainService.getWorkflowAnalysis(id, userId);
+    }
+
     @GetMapping("/get-active-integrations")
     public Object getAllIntegrations(
             @RequestParam(required = false) String search,

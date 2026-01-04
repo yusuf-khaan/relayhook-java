@@ -11,7 +11,6 @@ public record WorkflowResponseDTO(
     Boolean canExecuteParallel,
     Boolean isActive,
     List<String> tags,
-    Integer executionCount,
     String Webhookurl,
     LocalDate updatedAt
 ) {}

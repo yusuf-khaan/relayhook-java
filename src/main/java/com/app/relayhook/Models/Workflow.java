@@ -66,10 +66,6 @@ public class Workflow {
 
     private Boolean isActive = true;
 
-    private Integer executionCount = 0;
-
-    private Integer errorCount = 0;
-
     private String schedule;
 
     private String webhookUrl;
