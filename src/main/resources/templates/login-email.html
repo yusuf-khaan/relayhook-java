@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Login Alert</title>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f7f7f7; padding: 20px;">
+    <div style="max-width: 600px; margin: auto; background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+        <h2 style="color: #4f46e5;">New Login Alert</h2>
+        <p>Hi <strong th:text="${name}">User</strong>,</p>
+        <p>We noticed a login to your account on <strong th:text="${loginDate}">date</strong>.</p>
+        <p>If this was you, you can safely ignore this email. If not, please reset your password immediately.</p>
+        <a href="#" style="display: inline-block; padding: 10px 20px; background-color: #4f46e5; color: white; text-decoration: none; border-radius: 5px;">Reset Password</a>
+        <p style="margin-top: 20px; color: #888;">Team SurgeIT</p>
+    </div>
+</body>
+</html>
