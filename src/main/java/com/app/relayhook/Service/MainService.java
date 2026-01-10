@@ -15,6 +15,7 @@ import java.util.stream.StreamSupport;
 
 import org.springframework.boot.autoconfigure.security.SecurityProperties.User;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -33,6 +34,7 @@ import com.app.relayhook.DTO.WorkflowRequestsDTO;
 import com.app.relayhook.DTO.WorkflowResponseDTO;
 import com.app.relayhook.Enums.NodeStatus;
 import com.app.relayhook.Enums.NodeType;
+import com.app.relayhook.Integrations.Mail.MailAbs;
 import com.app.relayhook.Integrations.Relayhook.RelayhookAbs;
 import com.app.relayhook.Logs.NodeErrorLogger;
 import com.app.relayhook.Models.ScheduleChanges;
@@ -41,6 +43,7 @@ import com.app.relayhook.Models.UserIntegrationsCredentials;
 import com.app.relayhook.Models.Users;
 import com.app.relayhook.Models.Workflow;
 import com.app.relayhook.Models.WorkflowExecution;
+import com.app.relayhook.Models.WorkflowNodeExecution;
 import com.app.relayhook.Models.WorkflowNodes;
 import com.app.relayhook.Models.WorkflowRequests;
 import com.app.relayhook.Repository.ScheduledChangesRepository;
@@ -49,6 +52,7 @@ import com.app.relayhook.Repository.UserIntegrationsCredentialsRepository;
 import com.app.relayhook.Repository.UsersRepository;
 import com.app.relayhook.Repository.WorkflowExecutionRepository;
 import com.app.relayhook.Repository.WorkflowNodeExecutionRepository;
+import com.app.relayhook.Repository.WorkflowNodeRepository;
 import com.app.relayhook.Repository.WorkflowRepository;
 import com.app.relayhook.Repository.WorkflowRequestsRepository;
 import com.app.relayhook.SecurityConfig.JwtUtil;
@@ -83,6 +87,7 @@ public class MainService {
     private final UserIntegrationsCredentialsRepository userIntegrationsCredentialsRepository;
     private final WorkflowExecutionRepository workflowExecutionRepository;
     private final WorkflowNodeExecutionRepository workflowNodeExecutionRepository;
+    private final MailAbs mailAbs;
 
     @Transactional
     public Workflow saveWorkflow(HttpServletRequest request, WorkflowDTO dto) {
@@ -121,6 +126,7 @@ public class MainService {
                         node.setCanExecuteParallel(levelDTO.getCanExecuteParallel());
                         node.setRetriesLeft(nodeDTO.getRetry() != null ? nodeDTO.getRetry() : 3);
                         node.setSchemaData(nodeDTO.getSchemaData());
+                        node.setProvider(nodeDTO.getNodeData().getObject().getProvider());
                         nodesList.add(node);
                     }
                 }
@@ -235,6 +241,16 @@ public class MainService {
         workflowRequests.setTrigger(workflowRequestsDTO.trigger());
         workflowRequests.setScheduledTimeToContact(workflowRequestsDTO.scheduledTime());
         workflowRequests.setUser(user);
+        Map<String, Object> map = Map.of(
+                "userName", workflowRequestsDTO.name(),
+                "userEmail", workflowRequestsDTO.email(),
+                "featureTitle", workflowRequestsDTO.trigger(),
+                "featureDescription", workflowRequestsDTO.description());
+        mailAbs.sendTemplateMail(
+                "khanyusuf0966@gmail.com",
+                "New Feature Request Received",
+                "feature-request",
+                map);
         return workflowRequestsRepository.save(workflowRequests);
     }
 
@@ -433,84 +449,103 @@ public class MainService {
         return workflowRepository.save(existing);
     }
 
-    public List<WorkflowExecution> getWorkflowExecution(Long userId, Long workflowId) {
-        List<WorkflowExecution> existing = workflowExecutionRepository
-                .findByWorkflow_IdOrderByCreatedAtDesc(workflowId);
-        return existing;
+    public Page<WorkflowExecution> getWorkflowExecution(Long userId, Long workflowId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return workflowExecutionRepository.findByWorkflow_IdAndWorkflow_User_Id(workflowId, userId, pageable);
     }
 
-    public Map<String, Object> getWorkflowAnalysis(long workflowId, long userId) {
-
+    public Map<String, Object> getWorkflowLifetimeAnalysis(long workflowId, long userId) {
         Workflow workflow = workflowRepository
                 .findByIdAndUserId(workflowId, userId)
                 .orElseThrow(() -> new RuntimeException("Workflow not found"));
+        List<WorkflowExecution> executions = workflowExecutionRepository.findByWorkflow(workflow);
 
-        List<WorkflowNodes> nodes = workflow.getWorkflowNodesData();
+        int totalExecutions = executions.size();
 
-        int totalNodes = nodes.size();
+        if (totalExecutions == 0) {
+            return Map.of(
+                    "workflowId", workflowId,
+                    "totalExecutions", 0);
+        }
 
-        long successfulNodes = nodes.stream()
+        LocalDateTime firstExecution = executions.stream()
+                .map(WorkflowExecution::getCreatedAt)
+                .min(LocalDateTime::compareTo)
+                .orElse(null);
+
+        LocalDateTime lastExecution = executions.stream()
+                .map(WorkflowExecution::getUpdatedAt)
+                .max(LocalDateTime::compareTo)
+                .orElse(null);
+
+        List<WorkflowNodeExecution> allNodes = executions.stream()
+                .flatMap(ex -> ex.getWorkflowExecutionNodes().stream())
+                .toList();
+
+        int totalNodes = allNodes.size();
+
+        long completedNodes = allNodes.stream()
                 .filter(n -> n.getStatus() == NodeStatus.COMPLETED)
                 .count();
 
-        long failedNodes = nodes.stream()
+        long failedNodes = allNodes.stream()
                 .filter(n -> n.getStatus() == NodeStatus.FAILED)
                 .count();
 
-        int totalRetriesUsed = nodes.stream()
+        long runningNodes = allNodes.stream()
+                .filter(n -> n.getStatus() == NodeStatus.RUNNING)
+                .count();
+
+        int totalRetriesUsed = allNodes.stream()
                 .mapToInt(n -> Math.max(0, 3 - n.getRetriesLeft()))
                 .sum();
 
-        List<WorkflowNodes> integrationNodes = nodes.stream()
-                .filter(n -> n.getNodeType() == NodeType.INTEGRATION)
-                .toList();
+        double avgNodeExecutionTime = allNodes.stream()
+                .filter(n -> n.getExecutionTime() != null)
+                .mapToLong(WorkflowNodeExecution::getExecutionTime)
+                .average()
+                .orElse(0);
 
-        int totalIntegrations = integrationNodes.size();
-
-        List<String> integrationNames = integrationNodes.stream()
-                .map(WorkflowNodes::getProvider)
+        Map<String, Long> executionsPerProvider = allNodes.stream()
+                .map(WorkflowNodeExecution::getProvider)
                 .filter(p -> p != null && !p.isBlank())
-                .distinct()
-                .toList();
+                .collect(Collectors.groupingBy(p -> p, Collectors.counting()));
 
-        double successRate = totalNodes == 0
-                ? 0
-                : (successfulNodes * 100.0) / totalNodes;
+        // Map<Integer, Long> nodesPerLevel = allNodes.stream()
+        // .filter(n -> n.getLevel() != null)
+        // .collect(Collectors.groupingBy(WorkflowNodeExecution::getLevel,
+        // Collectors.counting()));
+
+        double successRate = totalNodes == 0 ? 0 : (completedNodes * 100.0) / totalNodes;
 
         Map<String, Object> result = new LinkedHashMap<>();
 
-        /* -------------------- Core -------------------- */
         result.put("workflowId", workflow.getId());
         result.put("name", workflow.getName());
         result.put("isActive", workflow.getIsActive());
 
-        /* -------------------- Execution -------------------- */
+        result.put("totalExecutions", totalExecutions);
+        result.put("firstExecution", firstExecution);
+        result.put("lastExecution", lastExecution);
+
         result.put("totalNodes", totalNodes);
-        // result.put("totalExecutions", workflow.getExecutionCount());
-        result.put("successfulNodes", successfulNodes);
+        result.put("completedNodes", completedNodes);
         result.put("failedNodes", failedNodes);
+        result.put("runningNodes", runningNodes);
         result.put("successRate", Math.round(successRate * 100.0) / 100.0);
-        result.put("totalRetries", totalRetriesUsed);
+        result.put("totalRetriesUsed", totalRetriesUsed);
+        result.put("avgNodeExecutionTimeMs", avgNodeExecutionTime);
 
-        /* -------------------- Trigger -------------------- */
-        result.put("trigger", workflow.getTrigger());
-        result.put("schedule", workflow.getSchedule());
+        result.put("totalExecutionPerProvider", executionsPerProvider);
+        // result.put("nodesPerLevel", nodesPerLevel);
 
-        /* -------------------- Integrations -------------------- */
-        result.put("totalIntegrations", totalIntegrations);
-        result.put("integrationNames", integrationNames);
-
-        /* -------------------- Timing -------------------- */
         result.put("createdAt", workflow.getCreatedAt());
         result.put("updatedAt", workflow.getUpdatedAt());
-
-        // Optional (if stored in metadata later)
-        if (workflow.getMetadata() != null) {
-            result.put("lastExecutedAt", workflow.getMetadata().get("lastExecutedAt"));
-            result.put("avgRuntime", workflow.getMetadata().get("avgRuntime"));
-        }
-
         return result;
+    }
+
+    public List<WorkflowNodeExecution> getExecutedWorkflowNodes(long userId, long executedWorkflowId) {
+        return workflowNodeExecutionRepository.findByWorkflowExecution_Id(executedWorkflowId);
     }
 
 }

@@ -12,10 +12,7 @@ import com.app.relayhook.Models.WorkflowNodeExecution;
 @Repository
 public interface WorkflowNodeExecutionRepository extends JpaRepository<WorkflowNodeExecution, Long> {
 
-    List<WorkflowNodeExecution> findByWorkflowExecution(WorkflowExecution workflowExecution);
-
-    Optional<WorkflowNodeExecution> findByWorkflowExecutionAndWorkflowNodeId(WorkflowExecution execution,
-            Long inputNodeId);
+    List<WorkflowNodeExecution> findByWorkflowExecution_Id(long  id);
 
     WorkflowNodeExecution findTopByWorkflowNodeIdAndWorkflowExecutionIdOrderByIdDesc(Long nodeId, Long executionId);
 }

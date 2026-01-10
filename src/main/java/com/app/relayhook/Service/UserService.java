@@ -96,21 +96,19 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
         }
         String jwtToken = jwtUtil.generateToken(userDTO.get("email"));
-        // log.info("Generated JWT Token: {}", jwtToken);
         ResponseCookie cookie = ResponseCookie.from("jwt", jwtToken)
                 .httpOnly(true)
                 .secure(true)
                 .sameSite("None")
                 .path("/")
-                .maxAge(EXPIRATION_MILLIS / 1000) // Convert milliseconds to seconds
+                .maxAge(EXPIRATION_MILLIS / 1000) 
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-        // Map<String,Object> map = Map.of(
-        //     "name", user.getUsername(),
-        //     "loginDate", new SimpleDateFormat("dd-MM-yyyy").format(new Date())
-        // );
-        // mailAbs.sendTemplateMail("thekhanyusuf096@gmail.com","Welcome to Relayhooks! ", "login-email", map);
-
+        Map<String,Object> map = Map.of(
+            "name", user.getUsername(),
+            "loginDate", new SimpleDateFormat("dd-MM-yyyy").format(new Date())
+        );
+        mailAbs.sendTemplateMail("khanyusuf0966@gmail.com","Welcome to Relayhooks! ", "login-email", map);
         return Map.of("message", "Login successful",
                 "navigate", "/hooks/project");
     }

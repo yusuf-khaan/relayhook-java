@@ -121,6 +121,16 @@ public class RabbitMqListener {
     public WorkflowNodeExecution createExecutionWorkflowNode(WorkflowExecution workflowExecution,
             WorkflowNodes workflowNode, Map<String, Object> inputData) {
         WorkflowNodeExecution nodeExecution = new WorkflowNodeExecution();
+
+        String provider = workflowNode.getProvider();
+        if (provider == null || provider.trim() == "") {
+            Map<String, Object> nodeData = workflowNode.getNodeData();
+            JsonNode nodeDataJson = objectMapper.valueToTree(nodeData);
+            provider = nodeDataJson.path("object").path("provider").asText(null);
+            workflowNode.setProvider(provider);
+            workflowNodeRepository.save(workflowNode);
+        }
+
         nodeExecution.setWorkflowExecution(workflowExecution);
 
         // Reference the original workflow node
@@ -132,6 +142,7 @@ public class RabbitMqListener {
         nodeExecution.setInputData(inputData != null ? inputData : Map.of());
         nodeExecution.setOutputData(Map.of());
         nodeExecution.setErrorLogs(new ArrayList<>());
+        nodeExecution.setProvider(provider);
         workflowNodeExecutionRepository.saveAndFlush(nodeExecution);
         return nodeExecution;
     }
@@ -139,8 +150,10 @@ public class RabbitMqListener {
     @Transactional
     protected WorkflowNodeExecution markNodeRunning(Long nodeExecutionId) {
         WorkflowNodeExecution nodeExecution = workflowNodeExecutionRepository.findById(nodeExecutionId)
-                .orElseThrow(() -> new RuntimeException("NodeExecution not found with id: " + nodeExecutionId));
-
+                .orElse(null);
+        if (nodeExecution == null) {
+            return null;
+        }
         nodeExecution.setStatus(NodeStatus.RUNNING);
         return workflowNodeExecutionRepository.save(nodeExecution);
     }

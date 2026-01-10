@@ -46,8 +46,8 @@ public class MainController {
 
     @PostMapping("/update-workflow/{id}")
     public Workflow updateWorkflow(
-    @PathVariable Long id,
-    @RequestBody Map<String, Object> updates) {
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> updates) {
         return mainService.updateWorkflow(id, updates);
     }
 
@@ -58,11 +58,11 @@ public class MainController {
         return mainService.getUserWorkflows(request, search, pageable);
     }
 
-     @GetMapping("/get-workflow-analysis/{id}")
-    public Map<String,Object> getWorkflowAnalysis(HttpServletRequest request,
-           @PathVariable long id) {
-            Long userId = (long) request.getAttribute("userId");
-        return mainService.getWorkflowAnalysis(id, userId);
+    @GetMapping("/get-workflow-analysis/{id}")
+    public Map<String, Object> getWorkflowAnalysis(HttpServletRequest request,
+            @PathVariable long id) {
+        Long userId = (long) request.getAttribute("userId");
+        return mainService.getWorkflowLifetimeAnalysis(id, userId);
     }
 
     @GetMapping("/get-active-integrations")
@@ -142,10 +142,19 @@ public class MainController {
     }
 
     @GetMapping("/executed-workflow-details/{id}")
-    public List<WorkflowExecution> getWorkflowExecution(
+    public Page<WorkflowExecution> getWorkflowExecution(
             HttpServletRequest request,
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
         Long userId = (Long) request.getAttribute("userId");
-        return mainService.getWorkflowExecution(userId, id);
+        return mainService.getWorkflowExecution(userId, id, page, size);
+    }
+
+    @GetMapping("/executed-workflow-nodes/{id}")
+    public Object getExecutedWorkflowNodes(HttpServletRequest request, @PathVariable long id){
+        long userId = (long) request.getAttribute("userId");
+        return mainService.getExecutedWorkflowNodes(userId, id);
     }
 }

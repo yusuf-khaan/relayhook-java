@@ -34,29 +34,20 @@ public class MailClient implements MailAbs {
     public CompletableFuture<Map<String, String>> sendTemplateMail(
             String to, String subject, String templateName,
             Map<String, Object> variables) {
-
         try {
-            // Prepare email body
             Context context = new Context();
             context.setVariables(variables);
             String body = templateEngine.process(templateName, context);
-
-            // Prepare message
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setTo(to);
             helper.setSubject(subject);
-            helper.setFrom(env.getProperty("spring.mail.username"));
+            helper.setFrom(env.getProperty("spring.mail.frommail"));
             helper.setText(body, true);
-
-            // Send email
             mailSender.send(message);
-
-            log.info("Email '{}' sent to {}", subject, to);
             return CompletableFuture.completedFuture(Map.of("status", "success", "code", "200"));
 
         } catch (Exception e) {
-            log.error("Error sending template email to {}", to, e);
             return CompletableFuture.completedFuture(Map.of("status", e.getMessage(), "code", "400"));
         }
     }

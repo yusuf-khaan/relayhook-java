@@ -71,6 +71,8 @@ public class WorkflowNodeExecution {
     @Nullable
     private Map<Integer, List<SchemaData>> schemaData;
 
+    private String provider;
+
     private Integer level;
 
     @ElementCollection

@@ -52,19 +52,14 @@ public class WorkflowNodes {
     @Column(columnDefinition = "jsonb")
     private Map<Integer, List<SchemaData>> schemaData;
 
-    private String action = null;
     private String provider = null;
-
 
     private Boolean canExecuteParallel = true;
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> nodeData;
-
-    @Enumerated(EnumType.STRING)
-    private NodeStatus status = NodeStatus.PENDING;
-
+   
     private int retriesLeft = 3;
 
     @Type(JsonType.class)

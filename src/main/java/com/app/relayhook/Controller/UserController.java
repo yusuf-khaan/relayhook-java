@@ -8,6 +8,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,6 +21,7 @@ import com.app.relayhook.Models.Users;
 import com.app.relayhook.Service.MainService;
 import com.app.relayhook.Service.UserService;
 
+import jakarta.mail.internet.MimeMessage;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -35,9 +38,11 @@ public class UserController {
 
     private final MainService mainService;
     private final UserService userService;
+    private final JavaMailSender mailSender;
 
     @PostMapping("/register")
-    public Users createUser(HttpServletRequest request, HttpServletResponse response, @RequestBody Map<String,String> userDTO) {
+    public Users createUser(HttpServletRequest request, HttpServletResponse response,
+            @RequestBody Map<String, String> userDTO) {
         return userService.createUser(userDTO, response);
     }
 
