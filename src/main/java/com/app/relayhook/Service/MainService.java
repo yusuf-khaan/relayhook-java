@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import javax.xml.bind.ValidationException;
+
 import org.springframework.boot.autoconfigure.security.SecurityProperties.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -347,7 +349,10 @@ public class MainService {
 
     public UserIntegrationsCredentials saveUserIntegration(Map<String, Object> integrationDetail, Long userId) {
         Long integrationId = ((Number) integrationDetail.get("integrationId")).longValue();
-        String slug = integrationDetail.get("slug").toString();
+        SystemIntegrations systemIntegration = systemIntegrationsRepository.findById(integrationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Integration not found"));
+        String slug = systemIntegration.getProvider();
+
         Optional<UserIntegrationsCredentials> existingOpt = userIntegrationsCredentialsRepository
                 .findBySlugAndUser_Id(slug, userId);
         UserIntegrationsCredentials credentials;
