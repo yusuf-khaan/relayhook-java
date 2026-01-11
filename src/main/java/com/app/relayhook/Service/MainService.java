@@ -427,6 +427,7 @@ public class MainService {
         userMap.put("email", users.getEmail());
         userMap.put("avatar", users.getAvatar());
         userMap.put("totalWorkflows", totalWorkflows);
+        userMap.put("userId", users.getId());
         return userMap;
     }
 
