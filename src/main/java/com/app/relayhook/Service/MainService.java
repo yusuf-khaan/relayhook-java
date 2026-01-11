@@ -246,8 +246,14 @@ public class MainService {
                 "userEmail", workflowRequestsDTO.email(),
                 "featureTitle", workflowRequestsDTO.trigger(),
                 "featureDescription", workflowRequestsDTO.description());
-        mailAbs.sendTemplateMail(
+        String[] foundingMembers = {
                 "khanyusuf0966@gmail.com",
+                "dmanuj663@gmail.com",
+                "ishanjaiswal567@gmail.com",
+                "ashutoshsaxena145@gmail.com"
+        };
+        mailAbs.sendTemplateMail(
+                foundingMembers,
                 "New Feature Request Received",
                 "feature-request",
                 map);

@@ -1,5 +1,6 @@
 package com.app.relayhook.Integrations.Mail;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -32,7 +33,7 @@ public class MailClient implements MailAbs {
 
     @Async
     public CompletableFuture<Map<String, String>> sendTemplateMail(
-            String to, String subject, String templateName,
+            String to[], String subject, String templateName,
             Map<String, Object> variables) {
         try {
             Context context = new Context();

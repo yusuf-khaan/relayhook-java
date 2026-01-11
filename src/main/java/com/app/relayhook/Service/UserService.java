@@ -108,7 +108,7 @@ public class UserService {
             "name", user.getUsername(),
             "loginDate", new SimpleDateFormat("dd-MM-yyyy").format(new Date())
         );
-        mailAbs.sendTemplateMail("khanyusuf0966@gmail.com","Welcome to Relayhooks! ", "login-email", map);
+        mailAbs.sendTemplateMail(List.of("khanyusuf0966@gmail.com").toArray(new String[0]),"Welcome to Relayhooks! ", "login-email", map);
         return Map.of("message", "Login successful",
                 "navigate", "/hooks/project");
     }
