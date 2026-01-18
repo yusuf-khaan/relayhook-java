@@ -11,8 +11,9 @@ import com.app.relayhook.Models.SystemIntegrations;
 public interface SystemIntegrationsRepository extends JpaRepository<SystemIntegrations, Long> {
 
     Page<SystemIntegrations> findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
-    String name, String description, Pageable pageable
-);
+            String name, String description, Pageable pageable);
 
     boolean existsByProvider(String provider);
+
+    SystemIntegrations findByProvider(String provider);
 }

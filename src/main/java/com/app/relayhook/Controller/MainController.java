@@ -157,4 +157,10 @@ public class MainController {
         long userId = (long) request.getAttribute("userId");
         return mainService.getExecutedWorkflowNodes(userId, id);
     }
+
+    @GetMapping("/get-workflow/{id}")
+    public Object getWorkflow(HttpServletRequest request, @PathVariable long id){
+        long userId = (long) request.getAttribute("userId");
+        return mainService.getWorkflow(userId, id);
+    }
 }

@@ -215,7 +215,27 @@ public class MainService {
             providerList.add(system.getProvider());
         }
         Object providersMetaData = relayhookAbs.getProvidersMetaData(providerList);
-        return providersMetaData;
+        JsonNode json = objectMapper.valueToTree(providersMetaData);
+        NodeErrorLogger.logError(json+ "is json 219");
+        NodeErrorLogger.logError(json.isArray()+ "is array");
+        if (json.isArray()) {
+            for (JsonNode node : json) {
+                String provider = node.path("provider").asText();
+                NodeErrorLogger.logError(provider+"is provider");
+                if (provider == null) {
+                    continue;
+                }
+                JsonNode details = node.path("providerDetails");
+                SystemIntegrations providerSystemIntegration = systemIntegrationsRepository.findByProvider(provider);
+                String image = providerSystemIntegration.getImage();
+                if (!details.isMissingNode() && details.isObject()) {
+                    ((ObjectNode) details).put(
+                            "image", image);
+                }
+
+            }
+        }
+        return json;
     }
 
     public Users createUser(Users userDTO, HttpServletResponse response, HttpServletRequest request) {
@@ -558,6 +578,10 @@ public class MainService {
 
     public List<WorkflowNodeExecution> getExecutedWorkflowNodes(long userId, long executedWorkflowId) {
         return workflowNodeExecutionRepository.findByWorkflowExecution_Id(executedWorkflowId);
+    }
+
+    public Workflow getWorkflow(long userId, long workflowId) {
+        return workflowRepository.findByIdAndUser_Id(workflowId, userId);
     }
 
 }

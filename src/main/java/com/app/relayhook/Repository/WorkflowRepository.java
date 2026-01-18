@@ -20,4 +20,6 @@ public interface WorkflowRepository extends JpaRepository<Workflow, Long>{
     Long countByUserId(Long userId);
 
     Optional<Workflow> findByIdAndUserId(long workflowId, long userId);
+
+    Workflow findByIdAndUser_Id(long workflowId, long userId);
 }
