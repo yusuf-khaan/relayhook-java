@@ -65,6 +65,7 @@ public class WorkflowNodesDTO {
         private String description;
         private String action;
         private String apiUrl;
+        private String image;
     }
 
     // @Data
