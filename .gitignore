@@ -34,3 +34,4 @@ build/
 *.log
 /src/main/resources/*.properties
 application-*.properties
+application.properties
