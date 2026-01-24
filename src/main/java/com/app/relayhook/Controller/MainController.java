@@ -41,7 +41,8 @@ public class MainController {
 
     @PostMapping("/save-workflow")
     public Object saveWorkflow(HttpServletRequest request, @RequestBody WorkflowDTO workflowDTO) {
-        return mainService.saveWorkflow(request, workflowDTO);
+        Long userId = (Long) request.getAttribute("userId");
+        return mainService.saveWorkflow(userId, workflowDTO);
     }
 
     @PostMapping("/update-workflow/{id}")

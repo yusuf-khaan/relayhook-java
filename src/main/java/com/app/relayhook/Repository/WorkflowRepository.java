@@ -21,5 +21,5 @@ public interface WorkflowRepository extends JpaRepository<Workflow, Long>{
 
     Optional<Workflow> findByIdAndUserId(long workflowId, long userId);
 
-    Workflow findByIdAndUser_Id(long workflowId, long userId);
+    Workflow findByIdAndUser_Id(long workflowId, Long userId);
 }

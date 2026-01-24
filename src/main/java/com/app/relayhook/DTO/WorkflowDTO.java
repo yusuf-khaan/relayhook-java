@@ -19,6 +19,8 @@ import lombok.NoArgsConstructor;
 @Data
 public class WorkflowDTO {
 
+    private Long id;
+
     private String name;
 
     private String description;

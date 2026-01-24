@@ -50,7 +50,7 @@ public class WorkflowNodes {
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")
-    private Map<Integer, List<SchemaData>> schemaData;
+    private Map<String, List<SchemaData>> schemaData;
 
     private String provider = null;
 

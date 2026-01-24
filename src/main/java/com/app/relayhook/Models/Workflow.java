@@ -36,7 +36,6 @@ import com.vladmihalcea.hibernate.type.json.JsonType;
 )
 public class Workflow {
 
-    @JsonIgnore
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

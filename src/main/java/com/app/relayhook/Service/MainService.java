@@ -92,16 +92,22 @@ public class MainService {
     private final MailAbs mailAbs;
 
     @Transactional
-    public Workflow saveWorkflow(HttpServletRequest request, WorkflowDTO dto) {
+    public Object saveWorkflow(Long userId, WorkflowDTO dto) {
         validateWorkflow(dto);
-        Users users = usersRepository.findById((Long) request.getAttribute("userId"))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "UNAUTHORIZED"));
         Workflow workflow = new Workflow();
+        Users users = usersRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "UNAUTHORIZED"));
+        if (dto.getId() != null) {
+            workflow = workflowRepository.findByIdAndUser_Id(dto.getId(), userId);
+        } else {
+            workflow.setUser(users);
+        }
         workflow.setName(dto.getName());
-        workflow.setUser(users);
         workflow.setDescription(dto.getDescription());
+
         workflow.setWorkflowData(objectMapper.convertValue(dto, new TypeReference<Map<String, Object>>() {
         }));
+
         workflow.setTrigger(dto.getTrigger());
         workflow.setSettings(dto.getSettings());
         workflow.setCanExecuteParallel(dto.getCanExecuteParallel());
@@ -134,7 +140,12 @@ public class MainService {
                 }
             }
         }
-        workflow.setWorkflowNodesData(nodesList);
+
+        if (workflow.getWorkflowNodesData() == null) {
+            workflow.setWorkflowNodesData(new ArrayList<>());
+        }
+        workflow.getWorkflowNodesData().clear();
+        workflow.getWorkflowNodesData().addAll(nodesList);
         Workflow savedWorkflow = workflowRepository.save(workflow);
         return savedWorkflow;
     }
@@ -216,12 +227,12 @@ public class MainService {
         }
         Object providersMetaData = relayhookAbs.getProvidersMetaData(providerList);
         JsonNode json = objectMapper.valueToTree(providersMetaData);
-        NodeErrorLogger.logError(json+ "is json 219");
-        NodeErrorLogger.logError(json.isArray()+ "is array");
+        NodeErrorLogger.logError(json + "is json 219");
+        NodeErrorLogger.logError(json.isArray() + "is array");
         if (json.isArray()) {
             for (JsonNode node : json) {
                 String provider = node.path("provider").asText();
-                NodeErrorLogger.logError(provider+"is provider");
+                NodeErrorLogger.logError(provider + "is provider");
                 if (provider == null) {
                     continue;
                 }

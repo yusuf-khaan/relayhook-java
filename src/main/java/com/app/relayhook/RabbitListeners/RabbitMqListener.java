@@ -44,7 +44,7 @@ public class RabbitMqListener {
     private String provider = null;
     private Long workflowId = null;
     private Integer workFlowNodeId = null;
-    private Integer nodeComesFrom = null;
+    private String nodeComesFrom = null;
     private Long workflowExecutionId = null;
 
     @RabbitListener(queues = RabbitMqConfig.EXECUTE_QUEUE)
@@ -53,8 +53,7 @@ public class RabbitMqListener {
         this.workFlowNodeId = workflowNodeIdNum.intValue();
         Number workflowIdNum = (Number) workflowNodesDetail.get("workflowId");
         this.workflowId = workflowIdNum.longValue();
-        Number nodeComesFrom = (Number) workflowNodesDetail.get("nodeComesFrom");
-        this.nodeComesFrom = nodeComesFrom != null ? nodeComesFrom.intValue() : null;
+        String nodeComesFrom = (String) workflowNodesDetail.get("nodeComesFrom");
 
         Number workflowExecutionIdNum = (Number) workflowNodesDetail.get("workflowExecutionId");
         Long workflowExecutionId = workflowExecutionIdNum.longValue();
@@ -257,7 +256,7 @@ public class RabbitMqListener {
                 payload.put("workflowExecutionId", completedExecution.getWorkflowExecution().getId());
                 payload.put("inputData", completedExecution.getOutputData());
                 payload.put("workflowId", this.workflowId);
-                payload.put("nodeComesFrom", completedNode.getNodeId());
+                payload.put("nodeComesFrom", String.valueOf(completedNode.getNodeId()));
                 rabbitTemplate.convertAndSend(RabbitMqConfig.EXECUTE_QUEUE, payload);
             } else {
             }

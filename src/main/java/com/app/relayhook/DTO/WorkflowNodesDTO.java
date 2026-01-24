@@ -40,7 +40,7 @@ public class WorkflowNodesDTO {
         private List<Integer> inputSources;
         private List<Integer> outputSources;
         private NodeDataWrapper nodeData = null;
-        private Map<Integer, List<SchemaData>> schemaData;
+        private Map<String, List<SchemaData>> schemaData;
     }
 
     @Data
