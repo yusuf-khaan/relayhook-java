@@ -33,6 +33,7 @@ public class SystemIntegrations {
 
     private Boolean active;
 
+    @Column(columnDefinition = "TEXT")
     private String Image;
 
     @Type(JsonType.class)
@@ -43,6 +44,7 @@ public class SystemIntegrations {
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> authPayload;
 
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     private String authType;
@@ -53,6 +55,7 @@ public class SystemIntegrations {
 
     private String provider;
 
+    @Column(columnDefinition = "TEXT")
     private String callbackUrl;
 
     @CreationTimestamp

@@ -59,6 +59,24 @@ public class MasterSeeder implements CommandLineRunner {
 
         integrations.add(new SystemIntegrations(
                 null,
+                "pdfparser",
+                true,
+                "https://imgs.search.brave.com/d-VblQdPD-JOqxE2C7qjEKNY0-aOMm2nQSC46sIwvkg/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20vMzJvRVlx/TTEzMlZRc0Z5LVpE/RkpHM0s0ckVZWWJD/N1ZHWWVNSkpZYThq/ay9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTkz/ZDNjdS9hMkZzYVM1/dmNtY3ZkRzl2L2JI/TXZjR1JtTFhCaGNu/TmwvY2k5cGJXRm5a/WE12Y0dSbS9MWEJo/Y25ObGNpMXNiMmR2/L0xuTjJadw",
+                Arrays.asList("pdf read"),
+                Map.of(
+
+                ),
+                "Pdf Parsers for reading",
+                "no token",
+                "v1",
+                "",
+                "pdfparser",
+                "",
+                null,
+                null));
+
+        integrations.add(new SystemIntegrations(
+                null,
                 "twilio",
                 true,
                 "https://imgs.search.brave.com/LNYqI143S-RS76yyeNWo0RL2b-g_XjQmBzDv2zDVDOg/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWcu/aWNvbnM4LmNvbS9l/eHRlcm5hbC10YWwt/cmV2aXZvLXNoYWRv/dy10YWwtcmV2aXZv/LzEyMDAvZXh0ZXJu/YWwtdHdpbGlvLWlz/LWEtY2xvdWQtY29t/bXVuaWNhdGlvbnMt/cGxhdGZvcm0tYXMt/YS1zZXJ2aWNlLWNv/bXBhbnktbG9nby1z/aGFkb3ctdGFsLXJl/dml2by5qcGc",
@@ -71,7 +89,7 @@ public class MasterSeeder implements CommandLineRunner {
                 "v1",
                 "https://twilio.com",
                 "twilio",
-                "https://yourdomain.com/api/integrations/gmail/callback",
+                null,
                 null,
                 null));
 
@@ -84,8 +102,8 @@ public class MasterSeeder implements CommandLineRunner {
                 Map.of(
                         "host", "",
                         "port", 0,
-                        "database", "",
-                        "user", "",
+                        "databaseName", "",
+                        "userName", "",
                         "password", "",
                         "ssl", false),
                 "Postgres.",
@@ -104,9 +122,9 @@ public class MasterSeeder implements CommandLineRunner {
                 "https://imgs.search.brave.com/Bfi1b826AMn-8-jGFIcjMlq-kct3_ynA_8AH0bpx5o0/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wMjQv/NTU4LzgwNS9zbWFs/bC9vcGVuYWktY2hh/dGdwdC1sb2dvLWlj/b24tZnJlZS1wbmcu/cG5n",
                 Arrays.asList(""),
                 Map.of(
-                        "api_key", null),
-                "open ai.",
-                "tokenized",
+                        "api_key", ""),
+                "Open AI Integration",
+                "tokens",
                 "v1",
                 "https://openai.com/",
                 "openai",
@@ -170,24 +188,24 @@ public class MasterSeeder implements CommandLineRunner {
                 null,
                 null));
 
-        integrations.add(new SystemIntegrations(
-                null,
-                "sheets",
-                true,
-                "https://upload.wikimedia.org/wikipedia/commons/3/3f/Google_Sheets_logo.svg",
-                Arrays.asList("google", "spreadsheet"),
-                Map.of(
-                        "scopes", "https://www.googleapis.com/auth/spreadsheets",
-                        "client_id", "",
-                        "client_secret", ""),
-                "Google Sheets API for reading and writing spreadsheets.",
-                "OAuth2",
-                "v4",
-                "https://sheets.googleapis.com/v4",
-                "sheets",
-                "https://yourdomain.com/api/integrations/sheets/callback",
-                null,
-                null));
+        // integrations.add(new SystemIntegrations(
+        //         null,
+        //         "sheets",
+        //         true,
+        //         "https://upload.wikimedia.org/wikipedia/commons/3/3f/Google_Sheets_logo.svg",
+        //         Arrays.asList("google", "spreadsheet"),
+        //         Map.of(
+        //                 "scopes", "https://www.googleapis.com/auth/spreadsheets",
+        //                 "client_id", "",
+        //                 "client_secret", ""),
+        //         "Google Sheets API for reading and writing spreadsheets.",
+        //         "OAuth2",
+        //         "v4",
+        //         "https://sheets.googleapis.com/v4",
+        //         "sheets",
+        //         "https://yourdomain.com/api/integrations/sheets/callback",
+        //         null,
+        //         null));
 
         integrations.add(new SystemIntegrations(
                 null,
@@ -205,7 +223,24 @@ public class MasterSeeder implements CommandLineRunner {
                 "v3",
                 "https://api.atlassian.com/ex/jira/",
                 "jira",
-                "https://yourdomain.com/api/integrations/jira/callback",
+                null,
+                null,
+                null));
+
+        integrations.add(new SystemIntegrations(
+                null,
+                "discord",
+                true,
+                "https://imgs.search.brave.com/aMHPYUn04oIOD4-afSNE8x_Tij9lX0OQeXmmSg9tYU0/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wMTgv/OTMwLzYwNC9zbWFs/bC9kaXNjb3JkLWxv/Z28tZGlzY29yZC1p/Y29uLXRyYW5zcGFy/ZW50LWZyZWUtcG5n/LnBuZw",
+                Arrays.asList("group dms, embedded messages", "update role"),
+                Map.of(
+                        "token", ""),
+                "Discord Integration",
+                "tokens",
+                "v1",
+                "https://discord.com",
+                "discord",
+                null,
                 null,
                 null));
 
