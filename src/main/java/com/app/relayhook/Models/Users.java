@@ -39,6 +39,7 @@ public class Users implements UserDetails {
 
     private String avatar;
 
+    @JsonIgnore
     private String password;
 
     private List<String> roles = new ArrayList<>();

@@ -434,7 +434,8 @@ public class MainService {
         user.setPassword(passwordEncoder.encode(newPassword));
         usersRepository.save(user);
         Map<String, String> response = new HashMap<>();
-        response.put("newPassword", newPassword);
+        String[] emails = new String[] {user.getEmail()}; 
+        mailAbs.sendTemplateMail(emails,"Reset Password", "reset-password", Map.of("newPassword", newPassword));
         response.put("message", "New password generated successfully!");
         return response;
     }
