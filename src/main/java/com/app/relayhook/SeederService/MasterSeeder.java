@@ -45,15 +45,18 @@ public class MasterSeeder implements CommandLineRunner {
                 "https://upload.wikimedia.org/wikipedia/commons/4/4e/Gmail_Icon.png",
                 Arrays.asList("email", "google"),
                 Map.of(
-                        "scopes", "https://mail.google.com/",
-                        "client_id", "",
-                        "client_secret", ""),
+                        "scope", "https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.readonly",
+                        "token_type", "",
+                        "expiry_date", "",
+                        "access_type", "",
+                        "refresh_token", ""
+                ),
                 "Gmail email integration for sending and reading mail.",
                 "OAuth2",
                 "v1",
                 "https://www.googleapis.com/gmail/v1",
                 "gmail",
-                "https://yourdomain.com/api/integrations/gmail/callback",
+                "",
                 null,
                 null));
 
@@ -245,12 +248,8 @@ public class MasterSeeder implements CommandLineRunner {
                 null));
 
         for (SystemIntegrations integration : integrations) {
-            if (!systemIntegrationsRepository.existsByProvider(integration.getProvider())) {
                 systemIntegrationsRepository.save(integration);
-            } else {
-                System.out.println("Skipped (already exists): " + integration.getProvider());
             }
-        }
         System.out.println(">>> SystemIntegrations SEEDING DONE <<<");
         System.exit(0);
     }
