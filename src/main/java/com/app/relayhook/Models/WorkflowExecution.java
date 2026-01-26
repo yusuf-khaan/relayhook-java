@@ -7,6 +7,7 @@ import java.util.Map;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.lang.Nullable;
 
 import com.app.relayhook.Enums.WorkflowStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -52,6 +53,9 @@ public class WorkflowExecution {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    @Nullable
+    private String relaytoken;
 
     @Type(JsonType.class)
     @Column(columnDefinition = "jsonb")

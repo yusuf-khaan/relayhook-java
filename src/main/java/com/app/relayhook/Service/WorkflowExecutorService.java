@@ -15,6 +15,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import com.app.relayhook.Configs.RabbitMqConfig;
 import com.app.relayhook.Enums.NodeStatus;
 import com.app.relayhook.Enums.WorkflowStatus;
+import com.app.relayhook.Logs.NodeErrorLogger;
 import com.app.relayhook.Models.Workflow;
 import com.app.relayhook.Models.WorkflowExecution;
 import com.app.relayhook.Models.WorkflowNodeExecution;
@@ -39,7 +40,7 @@ public class WorkflowExecutorService {
     private final WorkflowNodeRepository workflowNodeRepository;
 
     @Transactional
-    public Workflow executeAndPersistWorkflow(Workflow workflow, Map<String, Object> requestData) {
+    public Workflow executeAndPersistWorkflow(Workflow workflow, Map<String, Object> requestData, String relaytoken) {
 
         WorkflowExecution workflowExecution = new WorkflowExecution();
         workflowExecution.setWorkflow(workflow);
@@ -54,6 +55,8 @@ public class WorkflowExecutorService {
                 payload.put("workflowExecutionId", workflowExecution.getId());
                 payload.put("inputData", requestData);
                 payload.put("nodeComesFrom", null);
+                payload.put("relaytoken", relaytoken);
+                NodeErrorLogger.logError("58payload "+payload);
                 TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
                     @Override
                     public void afterCommit() {

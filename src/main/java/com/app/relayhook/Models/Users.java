@@ -44,6 +44,9 @@ public class Users implements UserDetails {
 
     private List<String> roles = new ArrayList<>();
 
+    @JsonIgnore
+    private String relaytoken;
+
     @OneToMany(mappedBy = "user")
     @JsonIgnore
     private List<UserIntegrationsCredentials> userIntegrationsCredentials;

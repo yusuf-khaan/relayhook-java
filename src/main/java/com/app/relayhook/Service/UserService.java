@@ -1,5 +1,6 @@
 package com.app.relayhook.Service;
 
+import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -75,6 +76,7 @@ public class UserService {
         Users user = new Users();
         user.setEmail(userDTO.get("email"));
         user.setPassword(passwordEncoder.encode(userDTO.get("password")));
+        user.setRelaytoken(generateRandomPassword(20));
         Users savedUser = usersRepository.save(user);
         String jwtToken = jwtUtil.generateToken(savedUser.getUsername());
         ResponseCookie cookie = ResponseCookie.from("jwt", jwtToken)
@@ -86,6 +88,16 @@ public class UserService {
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         return savedUser;
+    }
+
+    private String generateRandomPassword(int length) {
+        SecureRandom random = new SecureRandom();
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%!&*";
+        StringBuilder password = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            password.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return password.toString();
     }
 
     public Map<String, String> loginUser(Map<String, String> userDTO, HttpServletResponse response,

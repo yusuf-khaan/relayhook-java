@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
@@ -31,11 +32,11 @@ public class WebhookController {
     private final WorkflowRepository workflowRepository;
 
     @PostMapping("hook/{workflowId}")
-    public Object createExecutionOfWorkflow(@RequestBody Map<String, Object> request, @PathVariable Long workflowId) {
+    public Object createExecutionOfWorkflow(@RequestBody Map<String, Object> request,@RequestHeader(value = "RelayToken", required = true) String relaytoken , @PathVariable Long workflowId) {
         // webhookService.createExecutionOfWorkflow(workflowId, request);
         Workflow workflow = workflowRepository.findById(workflowId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Workflow not found"));
-        return workflowExecutorService.executeAndPersistWorkflow(workflow, request);
+        return workflowExecutorService.executeAndPersistWorkflow(workflow, request, relaytoken);
     }
 
 }

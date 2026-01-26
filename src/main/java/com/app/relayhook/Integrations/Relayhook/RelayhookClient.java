@@ -100,11 +100,12 @@ public class RelayhookClient implements RelayhookAbs {
         return sendRequest("POST", "/api/integration/get-provider-metadata", Map.of("provider", providersList), false);
     }
 
-    public JsonNode executeAutomationRequest(Map<String,Object> request, String action, String provider, List<SchemaData> schemaData) {
+    public JsonNode executeAutomationRequest(Map<String,Object> request, String action, String provider, List<SchemaData> schemaData, String relaytoken) {
         String url = buildUrlForExecutions(provider, action);
         Map<String,Object> requestBuild = new HashMap<>();
         requestBuild.put("data", request);
         requestBuild.put("schemaData", schemaData);
+        requestBuild.put("userId", relaytoken);
         return sendRequest("POST", url, requestBuild, false);
     }
 
