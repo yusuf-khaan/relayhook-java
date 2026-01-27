@@ -109,7 +109,7 @@ public class MasterSeeder implements CommandLineRunner {
                         "userName", "",
                         "password", "",
                         "ssl", false),
-                "Postgres.",
+                "Postgres Cloud",
                 "tokenized",
                 "v1",
                 "https://postgres.com/",
