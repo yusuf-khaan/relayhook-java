@@ -67,7 +67,7 @@ public class MasterSeeder implements CommandLineRunner {
                 "https://imgs.search.brave.com/d-VblQdPD-JOqxE2C7qjEKNY0-aOMm2nQSC46sIwvkg/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9pbWdz/LnNlYXJjaC5icmF2/ZS5jb20vMzJvRVlx/TTEzMlZRc0Z5LVpE/RkpHM0s0ckVZWWJD/N1ZHWWVNSkpZYThq/ay9yczpmaXQ6NTAw/OjA6MDowL2c6Y2Uv/YUhSMGNITTZMeTkz/ZDNjdS9hMkZzYVM1/dmNtY3ZkRzl2L2JI/TXZjR1JtTFhCaGNu/TmwvY2k5cGJXRm5a/WE12Y0dSbS9MWEJo/Y25ObGNpMXNiMmR2/L0xuTjJadw",
                 Arrays.asList("pdf read"),
                 Map.of(
-
+                        "scope", "read pdf texts"
                 ),
                 "Pdf Parsers for reading",
                 "no token",
